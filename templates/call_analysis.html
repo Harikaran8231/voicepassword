@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceAccess — Call Analysis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --bg:#0d0f1a; --surface:#151829; --border:#1e2235; --border2:#2a2d3e;
+      --cyan:#00e5ff; --green:#10b981; --red:#ef4444;
+      --text:#e2e8f0; --muted:#6b7280; --dim:#374151;
+    }
+    body{background:var(--bg);min-height:100vh;font-family:'Space Grotesk',sans-serif;color:var(--text);display:flex;flex-direction:column;position:relative;overflow-x:hidden;}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+
+    /* NAV */
+    nav{position:relative;z-index:10;background:rgba(13,15,26,0.9);backdrop-filter:blur(12px);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+    .nav-logo{display:flex;align-items:center;gap:0.75rem;text-decoration:none;}
+    .nav-logo-icon{position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;}
+    .nav-ring{position:absolute;inset:0;border-radius:50%;border:1.5px dashed rgba(0,229,255,0.4);animation:spin 12s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .nav-logo h1{font-size:1.15rem;font-weight:700;color:#ecf0f1;}
+    .nav-logo h1 span{color:var(--cyan);}
+    .nav-right{display:flex;align-items:center;gap:0.85rem;}
+    .nav-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:999px;font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--green);letter-spacing:0.08em;}
+    .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+    .btn-logout{display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+    .btn-logout:hover{border-color:var(--red);color:var(--red);background:rgba(239,68,68,0.06);}
+
+    /* MAIN */
+    main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;max-width:860px;width:100%;margin:0 auto;padding:2rem 1.5rem 4rem;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+    .page-title{margin-bottom:2rem;animation:fadeUp 0.5s ease both;}
+    .page-title .label{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--cyan);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:0.4rem;}
+    .page-title h2{font-size:2rem;font-weight:800;letter-spacing:-0.02em;}
+    .page-title p{font-family:'Space Mono',monospace;font-size:0.78rem;color:var(--muted);margin-top:0.35rem;line-height:1.6;}
+
+    /* UPLOAD CARD */
+    .upload-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:2rem;margin-bottom:1.5rem;animation:fadeUp 0.5s ease 0.1s both;}
+    .dropzone{border:2px dashed var(--border2);border-radius:14px;padding:2.5rem 2rem;text-align:center;cursor:pointer;transition:all 0.25s;position:relative;background:rgba(0,229,255,0.01);}
+    .dropzone:hover,.dropzone.drag-over{border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.04);}
+    .dropzone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .dz-icon{width:52px;height:52px;border-radius:14px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+    .dz-icon svg{width:26px;height:26px;stroke:var(--cyan);fill:none;}
+    .dz-title{font-size:1rem;font-weight:700;margin-bottom:0.35rem;}
+    .dz-sub{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);}
+    .dz-formats{margin-top:0.75rem;display:flex;gap:0.4rem;justify-content:center;flex-wrap:wrap;}
+    .fmt-tag{padding:0.2rem 0.55rem;border-radius:6px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15);font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--cyan);}
+
+    .file-selected{display:none;margin-top:1rem;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:0.85rem 1rem;align-items:center;gap:0.75rem;}
+    .file-selected.show{display:flex;}
+    .file-icon{width:36px;height:36px;border-radius:8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .file-icon svg{width:18px;height:18px;stroke:var(--green);fill:none;}
+    .file-info{flex:1;min-width:0;}
+    .file-name{font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .file-size{font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--muted);margin-top:0.1rem;}
+    .file-remove{background:none;border:none;cursor:pointer;color:var(--muted);padding:0.25rem;border-radius:6px;transition:color 0.2s;flex-shrink:0;}
+    .file-remove:hover{color:var(--red);}
+    .file-remove svg{width:16px;height:16px;stroke:currentColor;display:block;}
+
+    .field-label{font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.45rem;}
+    select{width:100%;padding:0.75rem 1rem;background:#0d0f1a;border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:0.88rem;outline:none;transition:border-color 0.2s;appearance:none;}
+    select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,0.08);}
+
+    .btn-analyze{width:100%;padding:1rem;margin-top:1.5rem;background:linear-gradient(135deg,var(--cyan),#00b8cc);border:none;border-radius:12px;color:#0d0f1a;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;}
+    .btn-analyze:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,229,255,0.3);}
+    .btn-analyze:disabled{opacity:0.45;cursor:not-allowed;transform:none;box-shadow:none;}
+    .btn-analyze svg{width:20px;height:20px;stroke:currentColor;fill:none;flex-shrink:0;}
+    .spinner{width:18px;height:18px;border:2.5px solid rgba(13,15,26,0.3);border-top-color:#0d0f1a;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+
+    .error-box{display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:1rem 1.25rem;margin-top:1rem;font-family:'Space Mono',monospace;font-size:0.78rem;color:#f87171;line-height:1.6;}
+    .error-box.show{display:block;}
+
+    /* PROGRESS */
+    .progress-card{display:none;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:1.75rem 2rem;margin-bottom:1.5rem;animation:fadeUp 0.4s ease both;}
+    .progress-card.show{display:block;}
+    .progress-label{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem;letter-spacing:0.08em;}
+    .progress-bar-wrap{background:#0d0f1a;border-radius:999px;height:6px;overflow:hidden;margin-bottom:0.5rem;}
+    .progress-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--cyan),#00b8cc);transition:width 0.4s ease;width:0%;}
+    .progress-steps{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:1rem;}
+    .step-item{display:flex;align-items:center;gap:0.5rem;font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--dim);}
+    .step-item.active{color:var(--cyan);}
+    .step-item.done{color:var(--green);}
+    .step-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .step-item.active .step-dot{animation:blink 1s infinite;}
+
+    /* RESULTS */
+    #results-section{display:none;animation:fadeUp 0.5s ease both;}
+    #results-section.show{display:block;}
+    .results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;}
+    .results-title{font-size:1.2rem;font-weight:800;}
+    .results-meta{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--muted);margin-top:0.2rem;}
+    .stats-row{display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+    .stat-box{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;text-align:center;}
+    .stat-val{font-size:1.4rem;font-weight:800;color:var(--cyan);}
+    .stat-lbl{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:0.2rem;letter-spacing:0.06em;text-transform:uppercase;}
+
+    /* TRANSCRIPT */
+    .transcript-wrap{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;}
+    .transcript-toolbar{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;}
+    .tt-title{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+    .speaker-filters{display:flex;gap:0.5rem;flex-wrap:wrap;}
+    .spk-filter{padding:0.25rem 0.7rem;border-radius:999px;border:1px solid transparent;font-family:'Space Mono',monospace;font-size:0.65rem;cursor:pointer;transition:all 0.2s;font-weight:700;letter-spacing:0.05em;background:none;}
+    .spk-filter.active{opacity:1;}
+    .spk-filter:not(.active){opacity:0.4;}
+
+    .transcript-body{padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1rem;max-height:600px;overflow-y:auto;}
+    .transcript-body::-webkit-scrollbar{width:4px;}
+    .transcript-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px;}
+
+    .utterance{display:flex;gap:0.85rem;align-items:flex-start;animation:fadeUp 0.35s ease both;}
+    .utterance.hidden{display:none;}
+    .spk-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;flex-shrink:0;border:1px solid;}
+    .utterance-content{flex:1;min-width:0;}
+    .utterance-header{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;flex-wrap:wrap;}
+    .spk-name{font-family:'Space Mono',monospace;font-size:0.78rem;font-weight:700;}
+    .spk-time{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--dim);}
+
+    .emotion-badge{display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:999px;font-family:'Space Mono',monospace;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;border:1px solid;}
+    .emo-note{font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--dim);font-style:italic;}
+
+    .utterance-text{font-size:0.93rem;line-height:1.65;color:var(--text);background:#0d0f1a;border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:0.8rem 1rem;}
+
+    /* emotion colours */
+    .emo-happy    {color:#fbbf24;border-color:rgba(251,191,36,0.3); background:rgba(251,191,36,0.07);}
+    .emo-sad      {color:#60a5fa;border-color:rgba(96,165,250,0.3); background:rgba(96,165,250,0.07);}
+    .emo-angry    {color:#f87171;border-color:rgba(248,113,113,0.3);background:rgba(248,113,113,0.07);}
+    .emo-excited  {color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.07);}
+    .emo-neutral  {color:#9ca3af;border-color:rgba(156,163,175,0.3);background:rgba(156,163,175,0.07);}
+    .emo-fearful  {color:#fb923c;border-color:rgba(251,146,60,0.3); background:rgba(251,146,60,0.07);}
+    .emo-surprised{color:#34d399;border-color:rgba(52,211,153,0.3); background:rgba(52,211,153,0.07);}
+    .emo-disgusted{color:#f472b6;border-color:rgba(244,114,182,0.3);background:rgba(244,114,182,0.07);}
+    .emo-confused {color:#e2e8f0;border-color:rgba(226,232,240,0.3);background:rgba(226,232,240,0.07);}
+
+    /* speaker colours */
+    .spk-1{color:#00e5ff;border-color:rgba(0,229,255,0.3);  background:rgba(0,229,255,0.08);}
+    .spk-2{color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.08);}
+    .spk-3{color:#34d399;border-color:rgba(52,211,153,0.3); background:rgba(52,211,153,0.08);}
+    .spk-4{color:#fb923c;border-color:rgba(251,146,60,0.3); background:rgba(251,146,60,0.08);}
+
+    /* EMOTION SUMMARY */
+    .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:1.5rem;margin-top:1.25rem;}
+    .summary-title{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;}
+    .summary-grid{display:flex;gap:1.5rem;flex-wrap:wrap;}
+    .summary-speaker{flex:1;min-width:180px;}
+    .sum-spk-name{font-size:0.88rem;font-weight:700;margin-bottom:0.75rem;}
+    .emo-bar-row{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;}
+    .emo-bar-label{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--muted);width:76px;flex-shrink:0;}
+    .emo-bar-wrap{flex:1;background:#0d0f1a;border-radius:999px;height:5px;overflow:hidden;}
+    .emo-bar-fill{height:100%;border-radius:999px;transition:width 0.7s ease;}
+    .emo-bar-pct{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted);width:34px;text-align:right;flex-shrink:0;}
+
+    footer{position:relative;z-index:1;text-align:center;padding:1.25rem;font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--dim);border-top:1px solid var(--border);}
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="nav-logo-icon">
+      <div class="nav-ring"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" style="width:18px;height:18px;">
+        <rect x="9" y="2" width="6" height="12" rx="3" fill="rgba(0,229,255,0.15)"/>
+        <path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="9" y1="22" x2="15" y2="22"/>
+      </svg>
+    </div>
+    <h1>Voice<span>Access</span></h1>
+  </a>
+  <div class="nav-right">
+    <div class="nav-badge"><span class="nav-dot"></span><span id="navUser">AUTHENTICATED</span></div>
+    <a href="/" class="btn-logout">Logout</a>
+  </div>
+</nav>
+
+<main>
+  <div class="page-title">
+    <div class="label">✦ Call Intelligence</div>
+    <h2>Call Analysis</h2>
+    <p>Upload a recorded call. We'll transcribe each speaker separately<br>and detect the emotion behind every statement.</p>
+  </div>
+
+  <div class="upload-card">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="audioFile" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.mp4,.webm,.opus">
+      <div class="dz-icon">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="dz-title">Drop your call recording here</div>
+      <div class="dz-sub">or click to browse files</div>
+      <div class="dz-formats">
+        <span class="fmt-tag">MP3</span><span class="fmt-tag">WAV</span><span class="fmt-tag">M4A</span>
+        <span class="fmt-tag">OGG</span><span class="fmt-tag">FLAC</span><span class="fmt-tag">AAC</span>
+        <span class="fmt-tag">MP4</span><span class="fmt-tag">WEBM</span>
+      </div>
+    </div>
+
+    <div class="file-selected" id="fileSelected">
+      <div class="file-icon">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+      </div>
+      <div class="file-info">
+        <div class="file-name" id="fileName">—</div>
+        <div class="file-size" id="fileSize">—</div>
+      </div>
+      <button class="file-remove" id="removeFile">
+        <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+
+    <button class="btn-analyze" id="analyzeBtn" disabled>
+      <svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      Analyze Call
+    </button>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <div class="progress-card" id="progressCard">
+    <div class="progress-label" id="progressLabel">Preparing...</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-steps">
+      <div class="step-item" id="step1"><span class="step-dot"></span>Uploading</div>
+      <div class="step-item" id="step2"><span class="step-dot"></span>Transcribing</div>
+      <div class="step-item" id="step3"><span class="step-dot"></span>Emotion analysis</div>
+      <div class="step-item" id="step4"><span class="step-dot"></span>Building report</div>
+    </div>
+  </div>
+
+  <div id="results-section">
+    <div class="results-header">
+      <div>
+        <div class="results-title">Call Transcript</div>
+        <div class="results-meta" id="resultsMeta">—</div>
+      </div>
+      <div class="speaker-filters" id="speakerFilters"></div>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="transcript-wrap">
+      <div class="transcript-toolbar">
+        <div class="tt-title">Conversation Log</div>
+      </div>
+      <div class="transcript-body" id="transcriptBody"></div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-title">Emotion Summary by Speaker</div>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+  </div>
+</main>
+
+<footer>Audio is processed securely on the server and not stored · VoiceAccess Call Intelligence</footer>
+
+<script>
+// ── file handling ────────────────────────────────────────────────────────────
+const audioFileInput = document.getElementById('audioFile');
+const dropzone       = document.getElementById('dropzone');
+const fileSelected   = document.getElementById('fileSelected');
+const analyzeBtn     = document.getElementById('analyzeBtn');
+const errorBox       = document.getElementById('errorBox');
+let   selectedFile   = null;
+
+function fmtSize(b){return b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';}
+
+function setFile(f){
+  selectedFile = f;
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('fileSize').textContent = fmtSize(f.size)+' · '+f.type;
+  fileSelected.classList.add('show');
+  analyzeBtn.disabled = false;
+  hideError();
+}
+function clearFile(){
+  selectedFile = null; audioFileInput.value='';
+  fileSelected.classList.remove('show'); analyzeBtn.disabled = true;
+}
+
+audioFileInput.addEventListener('change', e => { if(e.target.files[0]) setFile(e.target.files[0]); });
+document.getElementById('removeFile').addEventListener('click', clearFile);
+dropzone.addEventListener('dragover',  e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+
+function showError(m){ errorBox.textContent=m; errorBox.classList.add('show'); }
+function hideError(){ errorBox.classList.remove('show'); }
+
+// ── progress ─────────────────────────────────────────────────────────────────
+function setProgress(pct, label, active){
+  document.getElementById('progressBar').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = label;
+  ['step1','step2','step3','step4'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1<active) el.classList.add('done');
+    else if(i+1===active) el.classList.add('active');
+  });
+}
+
+// ── emotion + speaker meta ───────────────────────────────────────────────────
+const EMO = {
+  happy:    {icon:'😄',cls:'emo-happy',    color:'#fbbf24'},
+  sad:      {icon:'😢',cls:'emo-sad',      color:'#60a5fa'},
+  angry:    {icon:'😠',cls:'emo-angry',    color:'#f87171'},
+  excited:  {icon:'🤩',cls:'emo-excited',  color:'#a78bfa'},
+  neutral:  {icon:'😐',cls:'emo-neutral',  color:'#9ca3af'},
+  fearful:  {icon:'😨',cls:'emo-fearful',  color:'#fb923c'},
+  surprised:{icon:'😲',cls:'emo-surprised',color:'#34d399'},
+  disgusted:{icon:'🤢',cls:'emo-disgusted',color:'#f472b6'},
+  confused: {icon:'😕',cls:'emo-confused', color:'#e2e8f0'},
+};
+const SPK_CLS    = ['spk-1','spk-2','spk-3','spk-4'];
+const SPK_COLORS = ['#00e5ff','#a78bfa','#34d399','#fb923c'];
+const emo = k => EMO[(k||'').toLowerCase()] || EMO.neutral;
+const cap = s => s ? s[0].toUpperCase()+s.slice(1) : '';
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = s => { const m=Math.floor(s/60),sec=Math.floor(s%60); return m+':'+String(sec).padStart(2,'0'); };
+
+// ── analyze ──────────────────────────────────────────────────────────────────
+analyzeBtn.addEventListener('click', async () => {
+  if(!selectedFile) return;
+  hideError();
+  analyzeBtn.disabled = true;
+  document.getElementById('progressCard').classList.add('show');
+  document.getElementById('results-section').classList.remove('show');
+  setProgress(10, 'Preparing audio...', 1);
+
+  try {
+    const fd = new FormData();
+    fd.append('audio', selectedFile, selectedFile.name);
+    fd.append('language', 'auto');
+
+    setProgress(30, 'Uploading to server...', 1);
+    const resp = await fetch('/api/analyze-call', { method:'POST', body:fd });
+    setProgress(55, 'Transcribing speech...', 2);
+
+    const json = await resp.json();
+    if(!resp.ok || !json.success) throw new Error(json.message || 'Server error '+resp.status);
+
+    setProgress(78, 'Analyzing emotions...', 3);
+    await new Promise(r=>setTimeout(r,400));
+    setProgress(95, 'Building report...', 4);
+    await new Promise(r=>setTimeout(r,300));
+    setProgress(100, 'Complete!', 4);
+    await new Promise(r=>setTimeout(r,300));
+
+    document.getElementById('progressCard').classList.remove('show');
+    renderResults(json.data, selectedFile.name);
+  } catch(err) {
+    document.getElementById('progressCard').classList.remove('show');
+    analyzeBtn.disabled = false;
+    showError('Analysis failed: '+err.message);
+  }
+});
+
+// ── render ───────────────────────────────────────────────────────────────────
+function renderResults(data, filename){
+  document.getElementById('results-section').classList.add('show');
+  const speakers = data.speakers || [];
+  const utts     = data.utterances || [];
+  const durMin   = data.duration_seconds ? Math.round(data.duration_seconds/60) : '?';
+
+  document.getElementById('resultsMeta').textContent =
+    `${filename} · ${utts.length} utterances · ~${durMin} min`;
+
+  // stats
+  const allEmo = utts.map(u=>(u.emotion||'').toLowerCase()).filter(Boolean);
+  const dominant = allEmo.length
+    ? [...new Set(allEmo)].sort((a,b)=>allEmo.filter(e=>e===b).length-allEmo.filter(e=>e===a).length)[0]
+    : 'neutral';
+  const statsRow = document.getElementById('statsRow');
+  statsRow.innerHTML = '';
+  [
+    {val:speakers.length,          lbl:'Speakers'},
+    {val:utts.length,              lbl:'Utterances'},
+    {val:data.duration_seconds?Math.round(data.duration_seconds)+'s':'—', lbl:'Duration'},
+    {val:emo(dominant).icon+' '+cap(dominant), lbl:'Dominant Mood'},
+  ].forEach(s=>{
+    statsRow.innerHTML += `<div class="stat-box"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`;
+  });
+
+  // speaker filter buttons
+  const filtersEl = document.getElementById('speakerFilters');
+  filtersEl.innerHTML = `<button class="spk-filter active" data-spk="all" style="color:#e2e8f0;border-color:rgba(226,232,240,0.3);background:rgba(226,232,240,0.08);">All</button>`;
+  speakers.forEach((spk,i)=>{
+    const c = SPK_COLORS[i%SPK_COLORS.length];
+    filtersEl.innerHTML += `<button class="spk-filter ${SPK_CLS[i%4]}" data-spk="${spk}">${spk}</button>`;
+  });
+  filtersEl.querySelectorAll('.spk-filter').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      filtersEl.querySelectorAll('.spk-filter').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.utterance').forEach(el=>{
+        el.classList.toggle('hidden', btn.dataset.spk!=='all' && el.dataset.speaker!==btn.dataset.spk);
+      });
+    });
+  });
+
+  // transcript
+  const body = document.getElementById('transcriptBody');
+  body.innerHTML = '';
+  utts.forEach((u,idx)=>{
+    const si    = speakers.indexOf(u.speaker);
+    const sCls  = SPK_CLS[si>=0?si%4:0];
+    const sCol  = SPK_COLORS[si>=0?si%SPK_COLORS.length:0];
+    const e     = emo(u.emotion);
+    const inits = u.speaker.replace('Speaker ','S');
+    const div   = document.createElement('div');
+    div.className = 'utterance';
+    div.dataset.speaker = u.speaker;
+    div.style.animationDelay = (idx*0.04)+'s';
+    div.innerHTML = `
+      <div class="spk-avatar ${sCls}">${inits}</div>
+      <div class="utterance-content">
+        <div class="utterance-header">
+          <span class="spk-name" style="color:${sCol}">${u.speaker}</span>
+          ${u.start_time!=null?`<span class="spk-time">${fmt(u.start_time)}</span>`:''}
+          <span class="emotion-badge ${e.cls}">${e.icon} ${cap(u.emotion||'neutral')}</span>
+          ${u.emotion_note?`<span class="emo-note">${esc(u.emotion_note)}</span>`:''}
+        </div>
+        <div class="utterance-text">${esc(u.text)}</div>
+      </div>`;
+    body.appendChild(div);
+  });
+
+  // emotion summary
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = '';
+  speakers.forEach((spk,i)=>{
+    const sCol   = SPK_COLORS[i%SPK_COLORS.length];
+    const sumData = data.summary?.[spk];
+    if(!sumData) return;
+    const entries = Object.entries(sumData.emotion_breakdown||{}).sort((a,b)=>b[1]-a[1]);
+    grid.innerHTML += `<div class="summary-speaker">
+      <div class="sum-spk-name" style="color:${sCol}">${spk}</div>
+      ${entries.map(([e,pct])=>`
+        <div class="emo-bar-row">
+          <div class="emo-bar-label">${emo(e).icon} ${cap(e)}</div>
+          <div class="emo-bar-wrap"><div class="emo-bar-fill" style="width:${pct}%;background:${emo(e).color}"></div></div>
+          <div class="emo-bar-pct">${pct}%</div>
+        </div>`).join('')}
+    </div>`;
+  });
+
+  analyzeBtn.disabled = false;
+}
+
+// ── nav username ─────────────────────────────────────────────────────────────
+const u = new URLSearchParams(window.location.search).get('user');
+if(u) document.getElementById('navUser').textContent = 'AUTHENTICATED · '+u.toUpperCase();
+</script>
+</body>
+</html>

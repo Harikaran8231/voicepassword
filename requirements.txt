@@ -1,0 +1,22 @@
+Flask>=3.0.0
+python-dotenv>=1.0.0
+pymongo>=4.6.0
+numpy>=2.1.0
+librosa>=0.10.2
+soundfile>=0.12.1
+scipy>=1.14.0
+gunicorn>=22.0.0
+
+# Fix #4: Noise reduction — removes background hiss/fan/room noise before embedding
+noisereduce>=3.0.0
+
+# Whisper — local speech-to-text for challenge-response anti-spoofing
+openai-whisper>=20231117
+
+# Optional: SpeechBrain (high-accuracy speaker verification)
+# Uncomment for production deployment with GPU support:
+# speechbrain>=1.0.0
+# torch>=2.4.0
+# torchaudio>=2.4.0
+# Anthropic SDK — call analysis module
+anthropic>=0.28.0

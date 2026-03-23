@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceKey — Register</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0d0f1a;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;
+      font-family:'Space Grotesk',sans-serif;color:#fff;padding:1.5rem;position:relative;overflow-y:auto;
+    }
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);
+      background-size:48px 48px;pointer-events:none;z-index:0;
+    }
+    .page{position:relative;z-index:1;width:100%;max-width:520px;animation:fadeUp 0.5s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+    .back{display:inline-flex;align-items:center;gap:0.4rem;color:#6b7280;font-size:0.88rem;text-decoration:none;margin-bottom:1rem;transition:color 0.2s;}
+    .back:hover{color:#00e5ff;}
+    .back svg{width:16px;height:16px;stroke:currentColor;}
+
+    .card{background:#151829;border:1px solid #1e2235;border-radius:18px;padding:1.75rem 1.75rem 2rem;box-shadow:0 24px 80px rgba(0,0,0,0.6);}
+
+    .card-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+    .header-icon{width:52px;height:52px;border-radius:14px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .header-icon svg{width:26px;height:26px;stroke:#7c3aed;}
+    .card-header h2{font-size:1.6rem;font-weight:800;letter-spacing:-0.01em;line-height:1.1;}
+    .card-header p{font-family:'Space Mono',monospace;font-size:0.72rem;color:#6b7280;margin-top:0.25rem;}
+
+
+    .field-group { margin-bottom: 0.85rem; }
+    .field-label{font-family:'Space Mono',monospace;font-size:0.7rem;color:#6b7280;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;}
+    .field{margin-bottom:0.4rem;}
+    input{
+      width:100%;padding:0.85rem 1rem;background:#0d0f1a;border:1px solid #2a2d3e;border-radius:10px;
+      color:#fff;font-family:'Space Mono',monospace;font-size:0.95rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+    }
+    input:focus{border-color:#00e5ff;box-shadow:0 0 0 3px rgba(0,229,255,0.08);}
+    input::placeholder{color:#374151;}
+    input.input-error{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.08)!important;}
+    input.input-success{border-color:#10b981!important;box-shadow:0 0 0 3px rgba(16,185,129,0.08)!important;}
+
+    .uname-status{
+      font-family:'Space Mono',monospace;font-size:0.72rem;
+      display:flex;align-items:center;gap:0.35rem;
+      min-height:1.5rem;margin-bottom:0.85rem;padding-left:0.2rem;
+    }
+    .uname-status.available{color:#10b981;}
+    .uname-status.taken{color:#ef4444;}
+    .uname-status.short{color:#f59e0b;}
+    .uname-status.checking{color:#6b7280;}
+    .uname-status.empty{color:transparent;}
+
+    .phrase-box{background:#0d0f1a;border:1px solid rgba(0,229,255,0.2);border-radius:12px;padding:1rem;margin-bottom:1rem;position:relative;}
+    .phrase-top{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;}
+    .phrase-dot{width:7px;height:7px;border-radius:50%;background:#00e5ff;animation:blink 2s ease-in-out infinite;flex-shrink:0;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+    .phrase-top span{font-family:'Space Mono',monospace;font-size:0.68rem;color:#00e5ff;letter-spacing:0.1em;text-transform:uppercase;}
+    .phrase-refresh{position:absolute;top:0.9rem;right:0.9rem;background:none;border:none;cursor:pointer;color:#4b5563;padding:0.25rem;border-radius:6px;transition:color 0.2s;}
+    .phrase-refresh:hover{color:#00e5ff;}
+    .phrase-refresh svg{width:16px;height:16px;stroke:currentColor;}
+    .phrase-text{font-size:0.95rem;font-weight:500;color:#e2e8f0;line-height:1.65;padding-right:2rem;}
+
+    .recorder-box{background:#080a14;border:1px solid #1e2235;border-radius:12px;padding:1.25rem 1rem;margin-bottom:1rem;text-align:center;transition:border-color 0.3s,box-shadow 0.3s;}
+    .recorder-box.recording{border-color:rgba(239,68,68,0.5);box-shadow:0 0 24px rgba(239,68,68,0.12);}
+    .recorder-box.done{border-color:rgba(0,229,255,0.4);box-shadow:0 0 24px rgba(0,229,255,0.1);}
+
+    .viz{display:flex;align-items:center;justify-content:center;gap:3px;height:20px;margin-bottom:1rem;}
+    .vdot{width:4px;height:4px;border-radius:50%;background:#1e2235;transition:all 0.08s;}
+    .recorder-box.recording .vdot{background:#ef4444;}
+    .recorder-box.done .vdot{background:#00e5ff;}
+
+    .timer-wrap{position:relative;width:70px;height:70px;margin:0 auto 0.75rem;}
+    .timer-wrap svg{transform:rotate(-90deg);}
+    .t-bg{fill:none;stroke:#1e2235;stroke-width:4;}
+    .t-fill{fill:none;stroke:#00e5ff;stroke-width:4;stroke-linecap:round;stroke-dasharray:188.5;stroke-dashoffset:0;transition:stroke-dashoffset 0.1s linear,stroke 0.3s;}
+    .recorder-box.recording .t-fill{stroke:#ef4444;}
+    .recorder-box.done .t-fill{stroke:#10b981;}
+    .recorder-box.done .t-bg{stroke:#10b981;fill:rgba(16,185,129,0.15);}
+    .timer-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:1.05rem;font-weight:700;color:#fff;}
+    .rec-label{font-family:'Space Mono',monospace;font-size:0.7rem;color:#4b5563;letter-spacing:0.1em;text-transform:uppercase;}
+    .recorder-box.recording .rec-label{color:#ef4444;}
+    .recorder-box.done .rec-label{color:#00e5ff;}
+
+    .btn-record{width:100%;padding:0.95rem;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:0.65rem;}
+    .btn-record:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(239,68,68,0.4);}
+    .btn-record:disabled{opacity:0.5;cursor:not-allowed;}
+
+    .btn-register{width:100%;padding:0.95rem;border-radius:12px;border:none;background:linear-gradient(135deg,#00e5ff,#00b8cc);color:#0d0f1a;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;}
+    .btn-register:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,229,255,0.35);}
+    .btn-register:disabled{opacity:0.6;cursor:not-allowed;filter:grayscale(40%);}
+    .btn-register svg{width:17px;height:17px;stroke:#0d0f1a;}
+
+    .result{border-radius:10px;padding:0.85rem 1rem;display:none;animation:fadeUp 0.3s ease;margin-top:0.75rem;}
+    .result.success{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);}
+    .result.error{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);}
+    .result-title{font-weight:700;font-size:0.9rem;margin-bottom:0.15rem;}
+    .result.success .result-title{color:#10b981;}
+    .result.error .result-title{color:#ef4444;}
+    .result-msg{font-size:0.8rem;color:#6b7280;font-family:'Space Mono',monospace;}
+
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spinner{width:16px;height:16px;border:2px solid rgba(13,15,26,0.25);border-top-color:#0d0f1a;border-radius:50%;animation:spin 0.7s linear infinite;}
+    .toast{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%) translateY(-170%);padding:0.7rem 1.4rem;border-radius:10px;font-size:0.82rem;font-weight:600;z-index:1000;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);min-width:230px;text-align:center;font-family:'Space Mono',monospace;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.success{background:#064e3b;border:1px solid #10b981;color:#6ee7b7;}
+    .toast.error{background:#450a0a;border:1px solid #ef4444;color:#fca5a5;}
+    .toast.warn{background:#451a03;border:1px solid #f59e0b;color:#fcd34d;}
+  </style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div class="page">
+  <a href="/" class="back">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </a>
+  <div class="card">
+    <div class="card-header">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+      </div>
+      <div>
+        <h2>Register Voice Profile</h2>
+        <p>Record 3 short samples to build your voice profile</p>
+      </div>
+    </div>
+
+    <div class="field">
+<div class="field-group">
+      <div class="field-label">Username</div>
+      <input type="text" id="username" placeholder="Enter your username (min 4 chars)" maxlength="50" autocomplete="off" oninput="onUsernameInput()"/>
+    </div>
+    <div class="uname-status empty" id="unameStatus">—</div>
+
+    <div class="field-group" style="margin-top:0.85rem;">
+      <div class="field-label">Email Address</div>
+      <input type="email" id="emailInput" placeholder="Enter your email address" autocomplete="off" oninput="onEmailInput()"/>
+      <div id="emailStatus" style="font-family:'Space Mono',monospace;font-size:0.7rem;min-height:1.2rem;margin-top:0.35rem;padding-left:0.2rem;"></div>
+    </div>
+
+    <!-- Step progress indicator -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+      <span style="font-family:'Space Mono',monospace;font-size:0.68rem;color:#6b7280;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0;">SAMPLES</span>
+      <div style="display:flex;gap:6px;flex:1;">
+        <div id="dot0" style="flex:1;height:5px;border-radius:3px;background:#1e2235;transition:background .3s;"></div>
+        <div id="dot1" style="flex:1;height:5px;border-radius:3px;background:#1e2235;transition:background .3s;"></div>
+        <div id="dot2" style="flex:1;height:5px;border-radius:3px;background:#1e2235;transition:background .3s;"></div>
+      </div>
+      <span id="stepCounter" style="font-family:'Space Mono',monospace;font-size:0.68rem;color:#6b7280;flex-shrink:0;">0 / 3</span>
+    </div>
+
+    <!-- Phrase box — refreshes each sample -->
+    <div class="phrase-box">
+      <div class="phrase-top">
+        <span class="phrase-dot"></span>
+        <span id="phraseStepLabel">Sample 1 — Read this aloud</span>
+      </div>
+      <button class="phrase-refresh" onclick="newPhrase()" title="New passage">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+      <div class="phrase-text" id="phraseText">Loading...</div>
+    </div>
+
+    <!-- Recorder box -->
+    <div class="recorder-box" id="recorderBox">
+      <div class="viz" id="viz"></div>
+      <div class="timer-wrap">
+        <svg width="70" height="70" viewBox="0 0 72 72">
+          <circle class="t-bg" cx="36" cy="36" r="30"/>
+          <circle class="t-fill" id="timerRing" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="timer-text" id="timerText">5</div>
+      </div>
+      <div class="rec-label" id="recLabel">Ready to record</div>
+    </div>
+
+    <button class="btn-record" id="btnRecord" onclick="startRecording()">
+      <svg viewBox="0 0 24 24" fill="white" stroke="none" width="18" height="18">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span id="btnRecordLabel">Record Sample 1 of 3</span>
+    </button>
+
+    <button class="btn-register" id="btnRegister" onclick="submitRegister()" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17">
+        <polyline points="20 6 9 17 4 12" stroke="#0d0f1a"/>
+      </svg>
+      Register Voice Profile
+    </button>
+
+    <div class="result" id="result">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-msg" id="resultMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PHRASES = [
+    "The farmer watched the sunrise paint the fields gold before starting the morning work.",
+    "Scientists in the laboratory carefully recorded each result to ensure accuracy in their study.",
+    "The pianist played softly in the empty hall, each note echoing off the stone walls.",
+    "The aircraft glided silently above the clouds while passengers slept in the dark cabin.",
+    "The library held thousands of books, each one waiting quietly to share its story.",
+    "Secure systems protect sensitive data by verifying the identity of every user who connects.",
+    "The fisherman cast his net at dawn, reading the tide and wind before setting out.",
+    "Written language allows ideas to travel across centuries and reach minds yet to be born.",
+    "Engineers designed the bridge to flex slightly in strong wind rather than crack under pressure.",
+    "Every voice carries a unique pattern shaped by the structure of your throat and mouth.",
+    "An old map can reveal how a place looked before roads and buildings changed the landscape.",
+    "The mathematician solved the problem by breaking it into smaller parts she could handle one by one.",
+    "The rescue team moved quickly through the dark forest, guided only by their torches and compass.",
+    "Trust in technology grows slowly, built through consistent performance and transparent design.",
+    "Rivers have shaped civilisation for thousands of years, providing water, food, and transport.",
+  ];
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let currentPhrase = '';
+  let currentStep   = 0;          // 0, 1, 2
+  const audioBlobsz  = [null, null, null];  // one blob per sample
+  let mediaRecorder = null, timerInterval = null, animFrame = null, analyser = null;
+  let usernameValid = false, emailValid = false;
+  let checkTimeout  = null;
+  const DUR = 5000, DOTS = 36;
+
+  // ── Viz dots ───────────────────────────────────────────────────────────────
+  const vizEl = document.getElementById('viz');
+  for (let i = 0; i < DOTS; i++) { const d = document.createElement('div'); d.className = 'vdot'; vizEl.appendChild(d); }
+  const dots = vizEl.querySelectorAll('.vdot');
+
+  // ── Step UI helpers ────────────────────────────────────────────────────────
+  function updateStepUI() {
+    const DOT_COLORS = ['#1e2235', '#1e2235', '#1e2235'];
+    for (let i = 0; i < 3; i++) {
+      const el = document.getElementById('dot' + i);
+      if (audioBlobsz[i])       el.style.background = '#00e5ff';   // done
+      else if (i === currentStep) el.style.background = '#ef4444'; // active
+      else                        el.style.background = '#1e2235'; // waiting
+    }
+    const done = audioBlobsz.filter(Boolean).length;
+    document.getElementById('stepCounter').textContent = done + ' / 3';
+
+    const stepNum = currentStep + 1;
+    document.getElementById('btnRecordLabel').textContent =
+      audioBlobsz[currentStep]
+        ? `Re-record Sample ${stepNum} of 3`
+        : `Record Sample ${stepNum} of 3`;
+
+    document.getElementById('phraseStepLabel').textContent =
+      `Sample ${stepNum} — Read this aloud`;
+
+    // Enable Register only when all 3 samples collected
+    const allDone = audioBlobsz.every(Boolean);
+    document.getElementById('btnRegister').disabled = !allDone;
+    if (allDone) {
+      document.getElementById('btnRegister').style.opacity = '1';
+    }
+  }
+
+  // ── Email / Username validation ────────────────────────────────────────────
+  function onEmailInput() {
+    const val    = document.getElementById('emailInput').value.trim();
+    const inp    = document.getElementById('emailInput');
+    const status = document.getElementById('emailStatus');
+    if (!val) { inp.className = ''; status.textContent = ''; emailValid = false; return; }
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    if (valid) {
+      inp.className = 'input-success'; status.textContent = '✓ Valid email';
+      status.style.color = '#10b981'; emailValid = true;
+    } else {
+      inp.className = 'input-error'; status.textContent = '✗ Enter a valid email address';
+      status.style.color = '#ef4444'; emailValid = false;
+    }
+  }
+
+  function onUsernameInput() {
+    const inp    = document.getElementById('username');
+    const val    = inp.value.trim();
+    const status = document.getElementById('unameStatus');
+    usernameValid = false;
+    clearTimeout(checkTimeout);
+    if (val.length === 0) { status.textContent = '—'; status.className = 'uname-status empty'; inp.className = ''; return; }
+    if (val.length < 4)   { status.textContent = '⚠ Username must be at least 4 characters'; status.className = 'uname-status short'; inp.className = 'input-error'; return; }
+    status.textContent = '⋯ Checking availability…'; status.className = 'uname-status checking'; inp.className = '';
+    checkTimeout = setTimeout(() => checkUsername(val), 500);
+  }
+
+  async function checkUsername(val) {
+    const inp    = document.getElementById('username');
+    const status = document.getElementById('unameStatus');
+    try {
+      const res  = await fetch('/api/check_username?username=' + encodeURIComponent(val));
+      const data = await res.json();
+      if (data.exists) {
+        status.textContent = '✗ Username already taken'; status.className = 'uname-status taken';
+        inp.className = 'input-error'; usernameValid = false;
+      } else {
+        status.textContent = '✓ Username is available'; status.className = 'uname-status available';
+        inp.className = 'input-success'; usernameValid = true;
+      }
+    } catch(e) { status.textContent = '⚠ Could not check username'; status.className = 'uname-status short'; }
+  }
+
+  // ── Waveform visualiser ────────────────────────────────────────────────────
+  function startViz() {
+    if (!analyser) return;
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    function frame() {
+      analyser.getByteFrequencyData(buf);
+      dots.forEach((d, i) => { const s = Math.max(3, (buf[i] || 0) / 255 * 14); d.style.width = s + 'px'; d.style.height = s + 'px'; });
+      animFrame = requestAnimationFrame(frame);
+    } frame();
+  }
+  function stopViz() { cancelAnimationFrame(animFrame); dots.forEach(d => { d.style.width = '4px'; d.style.height = '4px'; }); }
+
+  // ── Phrase rotation ────────────────────────────────────────────────────────
+  function newPhrase() {
+    const filtered = PHRASES.filter(p => p !== currentPhrase);
+    currentPhrase  = filtered[Math.floor(Math.random() * filtered.length)];
+    const el = document.getElementById('phraseText');
+    el.style.opacity = '0';
+    setTimeout(() => { el.textContent = currentPhrase; el.style.transition = 'opacity 0.3s'; el.style.opacity = '1'; }, 150);
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  function toast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.className = `toast ${type}`; el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  // ── MIME ───────────────────────────────────────────────────────────────────
+  function mime() {
+    for (const t of ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg','audio/mp4'])
+      try { if (MediaRecorder.isTypeSupported(t)) return t; } catch(e) {}
+    return '';
+  }
+
+  // ── Record ─────────────────────────────────────────────────────────────────
+  async function startRecording() {
+    const uname = document.getElementById('username').value.trim();
+    if (uname.length < 4)  { toast('Username must be at least 4 characters.', 'warn'); return; }
+    if (!usernameValid)    { toast('Please choose an available username first.', 'warn'); return; }
+
+    document.getElementById('btnRecord').disabled   = true;
+    document.getElementById('btnRegister').disabled = true;
+    document.getElementById('result').style.display = 'none';
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      document.getElementById('recorderBox').className = 'recorder-box recording';
+      document.getElementById('recLabel').textContent  = '● Recording…';
+
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = ctx.createAnalyser(); analyser.fftSize = 64;
+      ctx.createMediaStreamSource(stream).connect(analyser); startViz();
+
+      let rem = DUR / 1000;
+      const ring = document.getElementById('timerRing');
+      const txt  = document.getElementById('timerText');
+      const C    = 188.5;
+      ring.style.strokeDashoffset = '0';
+      timerInterval = setInterval(() => {
+        rem = Math.max(0, rem - 0.1);
+        txt.textContent = rem.toFixed(0);
+        ring.style.strokeDashoffset = C * (1 - rem / (DUR / 1000));
+        if (rem <= 0) clearInterval(timerInterval);
+      }, 100);
+
+      const chunks = [], mt = mime();
+      mediaRecorder = new MediaRecorder(stream, mt ? { mimeType: mt } : {});
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mt || 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        stopViz(); clearInterval(timerInterval);
+
+        // Store blob for current step
+        audioBlobsz[currentStep] = blob;
+
+        document.getElementById('recorderBox').className = 'recorder-box done';
+        document.getElementById('recLabel').textContent  = `✓ Sample ${currentStep + 1} captured`;
+        document.getElementById('timerText').textContent = '✓';
+        document.getElementById('btnRecord').disabled    = false;
+
+        const allDone = audioBlobsz.every(Boolean);
+
+        if (allDone) {
+          toast('All 3 samples recorded! Click Register.', 'success');
+        } else {
+          // Auto-advance to next missing sample
+          const nextStep = audioBlobsz.findIndex(b => !b);
+          if (nextStep !== -1) {
+            currentStep = nextStep;
+            newPhrase();
+            setTimeout(() => {
+              document.getElementById('recorderBox').className = 'recorder-box';
+              document.getElementById('recLabel').textContent  = 'Ready to record';
+              document.getElementById('timerText').textContent = '5';
+              document.getElementById('timerRing').style.strokeDashoffset = '0';
+            }, 800);
+            toast(`Sample ${currentStep} captured — now record sample ${currentStep + 1}.`, 'success');
+          }
+        }
+        updateStepUI();
+      };
+      mediaRecorder.start();
+      setTimeout(() => { if (mediaRecorder?.state === 'recording') mediaRecorder.stop(); }, DUR);
+
+    } catch(e) {
+      document.getElementById('btnRecord').disabled = false;
+      updateStepUI();
+      toast('Microphone access denied.', 'error');
+    }
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  async function submitRegister() {
+    const uname = document.getElementById('username').value.trim();
+    const email = document.getElementById('emailInput').value.trim();
+    if (uname.length < 4) { toast('Username must be at least 4 characters.', 'warn'); return; }
+    if (!usernameValid)   { toast('Please choose an available username.', 'warn'); return; }
+    if (!audioBlobsz.every(Boolean)) { toast('Please record all 3 samples first.', 'warn'); return; }
+
+    const btn = document.getElementById('btnRegister');
+    btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Enrolling…';
+
+    const fd = new FormData();
+    fd.append('username', uname);
+    fd.append('email', email);
+
+    // Send as audio_1, audio_2, audio_3
+    audioBlobsz.forEach((blob, i) => {
+      const ext = blob.type.includes('ogg') ? '.ogg' : blob.type.includes('mp4') ? '.mp4' : '.webm';
+      fd.append(`audio_${i + 1}`, blob, `voice_${i + 1}${ext}`);
+    });
+
+    try {
+      const res  = await fetch('/api/register', { method: 'POST', body: fd });
+      const data = await res.json();
+      const r    = document.getElementById('result'); r.style.display = 'block';
+      if (data.success) {
+        r.className = 'result success';
+        document.getElementById('resultTitle').textContent = '✓ Voice Enrolled';
+        document.getElementById('resultMsg').textContent   = data.message + ' Redirecting to login…';
+        toast('Registered with 3 samples! Redirecting…', 'success');
+        setTimeout(() => { window.location.href = '/login'; }, 1500);
+      } else {
+        r.className = 'result error';
+        document.getElementById('resultTitle').textContent = '✗ Enrollment Failed';
+        document.getElementById('resultMsg').textContent   = data.message;
+        toast(data.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17"><polyline points="20 6 9 17 4 12" stroke="#0d0f1a"/></svg> Register Voice Profile';
+      }
+    } catch(e) {
+      toast('Network error. Try again.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17"><polyline points="20 6 9 17 4 12" stroke="#0d0f1a"/></svg> Register Voice Profile';
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  newPhrase();
+  updateStepUI();
+</script>
+</body>
+</html>

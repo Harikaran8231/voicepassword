@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceKey — Admin</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0d0f1a;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+      font-family:'Space Grotesk',sans-serif;color:#fff;padding:2rem 1rem;position:relative;overflow-y:auto;
+    }
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);
+      background-size:48px 48px;pointer-events:none;z-index:0;
+    }
+    .page{position:relative;z-index:1;width:100%;max-width:520px;margin:0 auto;animation:fadeUp 0.5s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+    .back{display:inline-flex;align-items:center;gap:0.4rem;color:#6b7280;font-size:0.88rem;text-decoration:none;margin-bottom:1rem;transition:color 0.2s;}
+    .back:hover{color:#00e5ff;}
+    .back svg{width:16px;height:16px;stroke:currentColor;}
+
+    .card{background:#151829;border:1px solid #1e2235;border-radius:18px;padding:1.75rem 1.75rem 2rem;box-shadow:0 24px 80px rgba(0,0,0,0.6);}
+
+    /* Header */
+    .card-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+    .header-icon{width:52px;height:52px;border-radius:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .header-icon svg{width:26px;height:26px;stroke:#ef4444;}
+    .card-header h2{font-size:1.6rem;font-weight:800;letter-spacing:-0.01em;line-height:1.1;}
+    .card-header p{font-family:'Space Mono',monospace;font-size:0.72rem;color:#6b7280;margin-top:0.25rem;}
+
+    /* Field */
+    .field-label{font-family:'Space Mono',monospace;font-size:0.7rem;color:#6b7280;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;}
+    .input-row{display:flex;gap:0.6rem;margin-bottom:0.5rem;}
+    input{
+      flex:1;padding:0.85rem 1rem;background:#0d0f1a;border:1px solid #2a2d3e;border-radius:10px;
+      color:#fff;font-family:'Space Mono',monospace;font-size:0.95rem;outline:none;
+      transition:border-color 0.2s,box-shadow 0.2s;
+    }
+    input:focus{border-color:#00e5ff;box-shadow:0 0 0 3px rgba(0,229,255,0.08);}
+    input::placeholder{color:#374151;}
+    input.found  {border-color:#10b981!important;box-shadow:0 0 0 3px rgba(16,185,129,0.08)!important;}
+    input.missing{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.08)!important;}
+
+    /* Check button */
+    .btn-check{
+      padding:0.85rem 1.1rem;border-radius:10px;border:1px solid #2a2d3e;
+      background:#0d0f1a;color:#6b7280;font-family:'Space Mono',monospace;font-size:0.75rem;
+      cursor:pointer;white-space:nowrap;transition:all 0.2s;letter-spacing:0.04em;
+    }
+    .btn-check:hover:not(:disabled){border-color:#00e5ff;color:#00e5ff;}
+    .btn-check:disabled{opacity:0.4;cursor:not-allowed;}
+
+    /* Status line */
+    .user-status{
+      font-family:'Space Mono',monospace;font-size:0.72rem;
+      display:flex;align-items:center;gap:0.35rem;
+      min-height:1.4rem;margin-bottom:1.25rem;padding-left:0.2rem;
+    }
+    .user-status.found  {color:#10b981;}
+    .user-status.missing{color:#ef4444;}
+    .user-status.checking{color:#6b7280;}
+    .user-status.empty  {color:transparent;}
+
+    /* User card preview */
+    .user-preview{
+      display:none;background:#0d0f1a;border:1px solid rgba(16,185,129,0.2);
+      border-radius:12px;padding:1rem 1.1rem;margin-bottom:1.25rem;
+    }
+    .user-preview.show{display:flex;align-items:center;gap:0.85rem;}
+    .user-avatar{
+      width:42px;height:42px;border-radius:50%;
+      background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+      font-size:1.1rem;font-weight:800;color:#00e5ff;
+    }
+    .user-info{}
+    .user-name{font-size:1rem;font-weight:700;color:#e2e8f0;}
+    .user-meta{font-family:'Space Mono',monospace;font-size:0.66rem;color:#6b7280;margin-top:0.2rem;}
+
+    /* Confirm box */
+    .confirm-box{
+      display:none;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);
+      border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;
+    }
+    .confirm-box.show{display:block;}
+    .confirm-title{font-weight:700;font-size:0.88rem;color:#ef4444;margin-bottom:0.3rem;}
+    .confirm-msg{font-family:'Space Mono',monospace;font-size:0.72rem;color:#6b7280;line-height:1.5;}
+
+    /* Buttons */
+    .btn-delete{
+      width:100%;padding:0.95rem;border-radius:12px;border:none;
+      background:linear-gradient(135deg,#ef4444,#dc2626);
+      color:#fff;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;
+      cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;
+    }
+    .btn-delete:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(239,68,68,0.4);}
+    .btn-delete:disabled{opacity:0.35;cursor:not-allowed;}
+    .btn-delete svg{width:17px;height:17px;stroke:#fff;}
+
+    /* Divider */
+    .divider{border:none;border-top:1px solid #1e2235;margin:1.5rem 0;}
+
+    /* All users list */
+    .section-label{font-family:'Space Mono',monospace;font-size:0.68rem;color:#6b7280;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.75rem;}
+    .user-list{display:flex;flex-direction:column;gap:0.5rem;max-height:240px;overflow-y:auto;padding-right:0.25rem;}
+    .user-list::-webkit-scrollbar{width:4px;}
+    .user-list::-webkit-scrollbar-track{background:#0d0f1a;}
+    .user-list::-webkit-scrollbar-thumb{background:#2a2d3e;border-radius:2px;}
+    .user-row{
+      display:flex;align-items:center;justify-content:space-between;
+      background:#0d0f1a;border:1px solid #1e2235;border-radius:10px;padding:0.65rem 0.85rem;
+      transition:border-color 0.2s;
+    }
+    .user-row:hover{border-color:#2a2d3e;}
+    .user-row-left{display:flex;align-items:center;gap:0.6rem;}
+    .user-row-avatar{
+      width:30px;height:30px;border-radius:50%;
+      background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.15);
+      display:flex;align-items:center;justify-content:center;
+      font-size:0.75rem;font-weight:800;color:#00e5ff;flex-shrink:0;
+    }
+    .user-row-name{font-size:0.88rem;font-weight:600;color:#e2e8f0;}
+    .btn-row-del{
+      background:none;border:1px solid transparent;border-radius:7px;
+      padding:0.3rem 0.6rem;cursor:pointer;color:#4b5563;
+      font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.04em;
+      transition:all 0.2s;
+    }
+    .btn-row-del:hover{border-color:rgba(239,68,68,0.4);color:#ef4444;background:rgba(239,68,68,0.06);}
+
+    .empty-list{font-family:'Space Mono',monospace;font-size:0.75rem;color:#374151;text-align:center;padding:1.5rem 0;}
+
+    /* ── Password gate ── */
+    .gate-card{background:#151829;border:1px solid #1e2235;border-radius:18px;padding:2rem 1.75rem;box-shadow:0 24px 80px rgba(0,0,0,0.6);width:100%;max-width:400px;}
+    .gate-icon{width:56px;height:56px;border-radius:16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;}
+    .gate-icon svg{width:28px;height:28px;stroke:#ef4444;}
+    .gate-title{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:0.35rem;letter-spacing:-0.01em;}
+    .gate-sub{font-family:'Space Mono',monospace;font-size:0.7rem;color:#6b7280;text-align:center;margin-bottom:1.5rem;letter-spacing:0.06em;}
+    .gate-input-wrap{position:relative;margin-bottom:0.75rem;}
+    .gate-input-wrap input{width:100%;padding:0.9rem 3rem 0.9rem 1rem;background:#0d0f1a;border:1px solid #2a2d3e;border-radius:10px;color:#fff;font-family:'Space Mono',monospace;font-size:0.95rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+    .gate-input-wrap input:focus{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,0.08);}
+    .gate-input-wrap input.wrong{border-color:#ef4444!important;animation:shake 0.4s ease;}
+    @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+    .btn-eye{position:absolute;right:0.85rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#4b5563;padding:0.2rem;transition:color 0.2s;}
+    .btn-eye:hover{color:#fff;}
+    .btn-eye svg{width:16px;height:16px;stroke:currentColor;}
+    .gate-error{font-family:'Space Mono',monospace;font-size:0.7rem;color:#ef4444;min-height:1.2rem;margin-bottom:0.75rem;padding-left:0.2rem;}
+    .btn-unlock{width:100%;padding:0.95rem;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;}
+    .btn-unlock:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(239,68,68,0.4);}
+    .btn-unlock:disabled{opacity:0.5;cursor:not-allowed;}
+
+    /* Logout button in admin panel */
+    .btn-logout-admin{display:flex;align-items:center;gap:0.4rem;background:transparent;border:1px solid #1e2235;border-radius:8px;padding:0.45rem 0.85rem;color:#6b7280;font-family:'Space Mono',monospace;font-size:0.68rem;cursor:pointer;transition:all 0.2s;margin-bottom:1.25rem;letter-spacing:0.04em;}
+    .btn-logout-admin:hover{border-color:#ef4444;color:#ef4444;}
+    .btn-logout-admin svg{width:13px;height:13px;stroke:currentColor;}
+
+    /* Result */
+    .result{border-radius:10px;padding:0.85rem 1rem;display:none;animation:fadeUp 0.3s ease;margin-top:0.75rem;}
+    .result.success{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);}
+    .result.error  {background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);}
+    .result-title{font-weight:700;font-size:0.9rem;margin-bottom:0.15rem;}
+    .result.success .result-title{color:#10b981;}
+    .result.error   .result-title{color:#ef4444;}
+    .result-msg{font-size:0.8rem;color:#6b7280;font-family:'Space Mono',monospace;}
+
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+    .toast{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%) translateY(-170%);padding:0.7rem 1.4rem;border-radius:10px;font-size:0.82rem;font-weight:600;z-index:1000;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);min-width:230px;text-align:center;font-family:'Space Mono',monospace;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.success{background:#064e3b;border:1px solid #10b981;color:#6ee7b7;}
+    .toast.error  {background:#450a0a;border:1px solid #ef4444;color:#fca5a5;}
+    .toast.warn   {background:#451a03;border:1px solid #f59e0b;color:#fcd34d;}
+
+    /* Recent logins */
+    .login-table{ width:100%; border-collapse:collapse; margin-top:0.5rem; }
+    .login-table th{
+      font-family:'Space Mono',monospace; font-size:0.62rem; color:#4b5563;
+      text-transform:uppercase; letter-spacing:0.08em;
+      padding:0.4rem 0.6rem; border-bottom:1px solid #1e2235; text-align:left;
+    }
+    .login-table td{
+      font-size:0.8rem; padding:0.55rem 0.6rem; border-bottom:1px solid #12141f;
+      color:#c8d0e0; font-family:'Space Grotesk',sans-serif;
+    }
+    .login-table tr:last-child td{ border-bottom:none; }
+    .login-table tr:hover td{ background:rgba(0,229,255,0.03); }
+    .login-score{ font-family:'Space Mono',monospace; font-size:0.72rem; color:#00e5ff; }
+    .login-time { font-family:'Space Mono',monospace; font-size:0.7rem;  color:#6b7280; }
+    .login-user { font-weight:600; color:#e2e8f0; }
+    .login-badge-admin{ font-family:'Space Mono',monospace;font-size:0.6rem;
+      background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);
+      border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle;}
+
+    .btn-log-action{
+      display:flex;align-items:center;gap:0.35rem;
+      padding:0.35rem 0.8rem;border-radius:8px;
+      border:1px solid #1e2235;background:transparent;color:#6b7280;
+      font-family:'Space Mono',monospace;font-size:0.68rem;
+      cursor:pointer;transition:all 0.2s;letter-spacing:0.04em;
+    }
+    .btn-log-action:hover{border-color:#00e5ff;color:#00e5ff;}
+    .btn-log-action:disabled{opacity:0.4;cursor:not-allowed;}
+    .btn-log-danger{border-color:rgba(239,68,68,0.25)!important;background:rgba(239,68,68,0.06)!important;color:#ef4444!important;}
+    .btn-log-danger:hover{background:rgba(239,68,68,0.12)!important;}
+  </style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- ── ADMIN PANEL ──────────────────────────────────────────────────────── -->
+<div class="page">
+  <a href="/" class="back">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </a>
+  <div class="card">
+
+    <!-- Header -->
+    <div class="card-header">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
+      </div>
+      <div>
+        <h2>Delete User</h2>
+        <p>Remove a voice profile permanently</p>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <!-- Search by username -->
+    <div class="field-label">Enter exact username</div>
+    <div class="input-row">
+      <input type="text" id="usernameInput" placeholder="e.g. krish" autocomplete="off"
+             oninput="onInput()" onkeydown="if(event.key==='Enter')checkUser()"/>
+      <button class="btn-check" id="btnCheck" onclick="checkUser()">CHECK</button>
+    </div>
+    <div class="user-status empty" id="userStatus">—</div>
+
+    <!-- User preview (shown when found) -->
+    <div class="user-preview" id="userPreview">
+      <div class="user-avatar" id="previewAvatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="previewName"></div>
+        <div class="user-meta">Voice profile found · Ready to delete</div>
+      </div>
+    </div>
+
+    <!-- Confirm warning -->
+    <div class="confirm-box" id="confirmBox">
+      <div class="confirm-title">⚠ This action cannot be undone</div>
+      <div class="confirm-msg">The voice embedding and all authentication history for this user will be permanently deleted from the database.</div>
+    </div>
+
+    <!-- Delete button -->
+    <button class="btn-delete" id="btnDelete" onclick="deleteUser()" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+        <path d="M10 11v6"/><path d="M14 11v6"/>
+      </svg>
+      Delete User
+    </button>
+
+    <div class="result" id="result">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-msg"   id="resultMsg"></div>
+    </div>
+
+
+  </div>
+
+  <!-- Tab section -->
+  <div style="width:100%;margin:1rem 0 0;">
+
+  <!-- Tab buttons -->
+  <div style="display:flex;gap:0.75rem;margin-bottom:1rem;">
+    <button id="tabBtnUsers"  onclick="switchTab('users')"
+      style="flex:1;padding:0.85rem;border-radius:12px;border:1px solid #00e5ff;
+             background:rgba(0,229,255,0.08);color:#00e5ff;font-family:'Space Grotesk',sans-serif;
+             font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s;">
+      👥 Registered Users
+    </button>
+    <button id="tabBtnLogins" onclick="switchTab('logins')"
+      style="flex:1;padding:0.85rem;border-radius:12px;border:1px solid #1e2235;
+             background:transparent;color:#6b7280;font-family:'Space Grotesk',sans-serif;
+             font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s;">
+      🕐 Recent Logins
+    </button>
+  </div>
+
+  <!-- Tab content -->
+  <div style="background:#151829;border:1px solid #1e2235;border-radius:16px;padding:1.5rem;">
+
+    <!-- Registered Users panel -->
+    <div id="tabUsers">
+      <div class="user-list" id="userList" style="max-height:480px;overflow-y:auto;">
+        <div class="empty-list">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Recent Logins panel -->
+    <div id="tabLogins" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.85rem;">
+        <span style="font-family:'Space Mono',monospace;font-size:0.68rem;color:#6b7280;letter-spacing:0.08em;text-transform:uppercase;">Login history</span>
+        <div style="display:flex;gap:0.5rem;">
+          <button onclick="loadRecentLogins()" class="btn-log-action">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            REFRESH
+          </button>
+          <button onclick="clearLogs()" class="btn-log-action btn-log-danger" id="btnClearLogs">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            CLEAR LOGS
+          </button>
+        </div>
+      </div>
+      <div id="recentLoginsWrap" style="max-height:440px;overflow-y:auto;">
+        <div class="empty-list">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+</div>
+
+<script>
+  let confirmedUser = null;
+
+  // ── Reset state when input changes ──────────────────────────────────────────
+  function onInput() {
+    confirmedUser = null;
+    document.getElementById('btnDelete').disabled = true;
+    document.getElementById('userPreview').className = 'user-preview';
+    document.getElementById('confirmBox').className  = 'confirm-box';
+    document.getElementById('result').style.display  = 'none';
+    const val = document.getElementById('usernameInput').value.trim();
+    if (!val) {
+      setStatus('empty', '—');
+      document.getElementById('usernameInput').className = '';
+    } else {
+      setStatus('checking', '⋯ Press CHECK or hit Enter');
+      document.getElementById('usernameInput').className = '';
+    }
+  }
+
+  // ── Check if user exists ────────────────────────────────────────────────────
+  async function checkUser() {
+    const val = document.getElementById('usernameInput').value.trim();
+    if (!val) { toast('Enter a username first.', 'warn'); return; }
+
+    document.getElementById('btnCheck').disabled = true;
+    setStatus('checking', '⋯ Checking…');
+
+    try {
+      const res  = await fetch('/api/check_username?username=' + encodeURIComponent(val));
+      const data = await res.json();
+
+      if (data.exists) {
+        const isAdmin = val.toLowerCase() === "{{ admin_user }}";
+        setStatus('found', `✓ "${val}" found in database`);
+        document.getElementById('usernameInput').className = 'found';
+        document.getElementById('previewAvatar').textContent = val[0].toUpperCase();
+        document.getElementById('previewName').textContent   = val;
+        document.getElementById('userPreview').className = 'user-preview show';
+        if (isAdmin) {
+          document.getElementById('confirmBox').className  = 'confirm-box';
+          document.getElementById('btnDelete').disabled    = true;
+          setStatus('missing', `✗ Cannot delete admin user "${val}"`);
+          document.getElementById('usernameInput').className = 'missing';
+        } else {
+          document.getElementById('confirmBox').className  = 'confirm-box show';
+          document.getElementById('btnDelete').disabled    = false;
+          confirmedUser = val;
+        }
+      } else {
+        // Not found
+        setStatus('missing', `✗ "${val}" does not exist`);
+        document.getElementById('usernameInput').className = 'missing';
+        document.getElementById('userPreview').className = 'user-preview';
+        document.getElementById('confirmBox').className  = 'confirm-box';
+        document.getElementById('btnDelete').disabled    = true;
+        confirmedUser = null;
+      }
+    } catch(e) {
+      setStatus('missing', '⚠ Could not reach server');
+      toast('Network error.', 'error');
+    } finally {
+      document.getElementById('btnCheck').disabled = false;
+    }
+  }
+
+  // ── Delete confirmed user ───────────────────────────────────────────────────
+  async function deleteUser(username) {
+    const target = username || confirmedUser;
+    if (!target) { toast('No user selected.', 'warn'); return; }
+
+    const btn = document.getElementById('btnDelete');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Deleting…';
+
+    try {
+      const res  = await fetch('/api/delete-user', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ username: target })
+      });
+      const data = await res.json();
+      const r    = document.getElementById('result');
+      r.style.display = 'block';
+
+      if (data.success) {
+        r.className = 'result success';
+        document.getElementById('resultTitle').textContent = '✓ User Deleted';
+        document.getElementById('resultMsg').textContent   = `"${target}" has been permanently removed.`;
+        toast(`"${target}" deleted.`, 'success');
+
+        // Reset form
+        document.getElementById('usernameInput').value     = '';
+        document.getElementById('usernameInput').className = '';
+        document.getElementById('userPreview').className   = 'user-preview';
+        document.getElementById('confirmBox').className    = 'confirm-box';
+        setStatus('empty', '—');
+        confirmedUser = null;
+
+        // Refresh user list
+        loadUsers();
+  loadRecentLogins();
+      } else {
+        r.className = 'result error';
+        document.getElementById('resultTitle').textContent = '✗ Delete Failed';
+        document.getElementById('resultMsg').textContent   = data.message || 'Could not delete user.';
+        toast('Delete failed.', 'error');
+      }
+    } catch(e) {
+      toast('Network error.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+        </svg> Delete User`;
+    }
+  }
+
+  // ── Load all users list ─────────────────────────────────────────────────────
+
+  // ── Tab switching ─────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    const isUsers  = tab === 'users';
+    document.getElementById('tabUsers').style.display  = isUsers  ? 'block' : 'none';
+    document.getElementById('tabLogins').style.display = isUsers  ? 'none'  : 'block';
+
+    const btnUsers  = document.getElementById('tabBtnUsers');
+    const btnLogins = document.getElementById('tabBtnLogins');
+
+    if (isUsers) {
+      btnUsers.style.border     = '1px solid #00e5ff';
+      btnUsers.style.background = 'rgba(0,229,255,0.08)';
+      btnUsers.style.color      = '#00e5ff';
+      btnLogins.style.border    = '1px solid #1e2235';
+      btnLogins.style.background= 'transparent';
+      btnLogins.style.color     = '#6b7280';
+    } else {
+      btnLogins.style.border    = '1px solid #00e5ff';
+      btnLogins.style.background= 'rgba(0,229,255,0.08)';
+      btnLogins.style.color     = '#00e5ff';
+      btnUsers.style.border     = '1px solid #1e2235';
+      btnUsers.style.background = 'transparent';
+      btnUsers.style.color      = '#6b7280';
+    }
+  }
+
+  // ── Recent logins ────────────────────────────────────────────────────────────
+  async function loadRecentLogins() {
+    const wrap = document.getElementById('recentLoginsWrap');
+    try {
+      const res  = await fetch('/api/recent-logins');
+      const data = await res.json();
+      if (!data.logins || data.logins.length === 0) {
+        wrap.innerHTML = '<div class="empty-list">No logins recorded yet.</div>';
+        return;
+      }
+      const ADMIN_USER = "{{ admin_user }}";
+      const rows = data.logins.map(l => {
+        const isAdmin  = l.username.toLowerCase() === ADMIN_USER;
+        const badge    = isAdmin ? '<span class="login-badge-admin">ADMIN</span>' : '';
+        const score    = (l.similarity_score * 100).toFixed(1) + '%';
+        const ts       = new Date(l.timestamp);
+        const ist      = new Date(ts.getTime() + (5.5 * 60 * 60 * 1000));
+        const dateStr  = ist.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+        const timeStr  = ist.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit', hour12:true});
+        return `<tr>
+          <td><span class="login-user">${l.username}</span>${badge}</td>
+          <td><span class="login-score">${score}</span></td>
+          <td><span class="login-time">${dateStr} ${timeStr} IST</span></td>
+        </tr>`;
+      }).join('');
+      wrap.innerHTML = `
+        <table class="login-table">
+          <thead><tr>
+            <th>Username</th>
+            <th>Match Score</th>
+            <th>Time (IST)</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    } catch(e) {
+      wrap.innerHTML = `<div class="empty-list">Error: ${e.message}</div>`;
+    }
+  }
+
+  async function loadUsers() {
+    const list = document.getElementById('userList');
+    list.innerHTML = '<div class="empty-list">Loading…</div>';
+    try {
+      const res  = await fetch('/api/users');
+      const data = await res.json();
+      if (!data.users || data.users.length === 0) {
+        list.innerHTML = '<div class="empty-list">No registered users found.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      const ADMIN_USER = "{{ admin_user }}";
+      data.users.sort((a, b) => {
+        const nameA = (typeof a === 'string' ? a : a.username).toLowerCase();
+        const nameB = (typeof b === 'string' ? b : b.username).toLowerCase();
+        if (nameA === ADMIN_USER) return -1;
+        if (nameB === ADMIN_USER) return  1;
+        return nameA.localeCompare(nameB);
+      });
+      data.users.forEach(u => {
+        const name = typeof u === 'string' ? u : u.username;
+        const row = document.createElement('div');
+        row.className = 'user-row';
+        row.innerHTML = `
+          <div class="user-row-left">
+            <div class="user-row-avatar">${name[0].toUpperCase()}</div>
+            <div class="user-row-name">${name}</div>
+          </div>
+          ${name.toLowerCase() !== ADMIN_USER ? `<button class="btn-row-del" onclick="quickDelete('${name}')">DELETE</button>` : '<span style="font-family:Space Mono,monospace;font-size:0.65rem;color:#374151;padding:0.3rem 0.6rem;">ADMIN</span>'}
+        `;
+        list.appendChild(row);
+      });
+    } catch(e) {
+      list.innerHTML = `<div class="empty-list">Error: ${e.message}</div>`;
+    }
+  }
+
+  // ── Quick delete from list ──────────────────────────────────────────────────
+  function quickDelete(username) {
+    // Fill the input and trigger the delete directly
+    document.getElementById('usernameInput').value = username;
+    confirmedUser = username;
+    document.getElementById('previewAvatar').textContent = username[0].toUpperCase();
+    document.getElementById('previewName').textContent   = username;
+    document.getElementById('userPreview').className = 'user-preview show';
+    document.getElementById('confirmBox').className  = 'confirm-box show';
+    setStatus('found', `✓ "${username}" found in database`);
+    document.getElementById('usernameInput').className = 'found';
+    deleteUser(username);
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function setStatus(type, text) {
+    const el = document.getElementById('userStatus');
+    el.textContent = text;
+    el.className   = `user-status ${type}`;
+  }
+
+  function toast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = `toast ${type}`;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ── Admin logout ────────────────────────────────────────────────────────────
+  async function adminLogout() {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    window.location.reload();
+  }
+
+  // ── Init ────────────────────────────────────────────────────────────────────
+  loadUsers();
+  loadRecentLogins();
+
+  async function clearLogs() {
+    const btn  = document.getElementById('btnClearLogs');
+    const wrap = document.getElementById('recentLoginsWrap');
+    if (!confirm('Delete all login logs? This cannot be undone.')) return;
+    btn.disabled = true;
+    btn.innerHTML = 'Clearing…';
+    try {
+      const res  = await fetch('/api/clear-logs', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        wrap.innerHTML = '<div class="empty-list">No logins recorded yet.</div>';
+        showToast('Cleared ' + data.deleted + ' log entries', 'success');
+      } else {
+        showToast(data.message || 'Failed to clear logs', 'error');
+      }
+    } catch(e) {
+      showToast('Error: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg> CLEAR LOGS`;
+    }
+  }
+</script>
+
+</body>
+</html>

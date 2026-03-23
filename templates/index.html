@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceAccess</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0d0f1a;min-height:100vh;display:flex;align-items:center;justify-content:center;
+      font-family:'Space Grotesk',sans-serif;color:#fff;padding:1.5rem;position:relative;overflow:hidden;
+    }
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);
+      background-size:48px 48px;pointer-events:none;z-index:0;
+    }
+    .page{position:relative;z-index:1;width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;animation:fadeUp 0.6s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+    .logo{display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;}
+    .logo-icon{position:relative;width:58px;height:58px;display:flex;align-items:center;justify-content:center;}
+    .logo-icon svg.mic{width:32px;height:32px;stroke:#00e5ff;fill:none;}
+    .logo-ring{position:absolute;inset:0;border-radius:50%;border:1.5px dashed rgba(0,229,255,0.5);animation:spin 12s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .logo-ring2{position:absolute;inset:5px;border-radius:50%;border:1px solid rgba(0,229,255,0.2);}
+    .logo h1{font-size:1.9rem;font-weight:700;letter-spacing:-0.01em;}
+    .logo h1 span{color:#00e5ff;}
+
+    .badge{
+      display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;
+      background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.2);border-radius:999px;
+      font-family:'Space Mono',monospace;font-size:0.7rem;color:#00e5ff;letter-spacing:0.1em;margin-bottom:2rem;
+    }
+    .badge-dot{width:6px;height:6px;border-radius:50%;background:#00e5ff;animation:blink 2s ease-in-out infinite;flex-shrink:0;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+
+    .waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:48px;margin-bottom:1.75rem;}
+    .wbar{width:3px;border-radius:2px;background:#00e5ff;opacity:0.7;animation:wave 1.4s ease-in-out infinite;}
+    .wbar:nth-child(1){height:12px;animation-delay:0s;}.wbar:nth-child(2){height:22px;animation-delay:0.1s;}
+    .wbar:nth-child(3){height:32px;animation-delay:0.2s;}.wbar:nth-child(4){height:40px;animation-delay:0.3s;}
+    .wbar:nth-child(5){height:48px;animation-delay:0.4s;}.wbar:nth-child(6){height:40px;animation-delay:0.3s;}
+    .wbar:nth-child(7){height:32px;animation-delay:0.2s;}.wbar:nth-child(8){height:22px;animation-delay:0.1s;}
+    .wbar:nth-child(9){height:12px;animation-delay:0s;}
+    @keyframes wave{0%,100%{transform:scaleY(0.5);opacity:0.4;}50%{transform:scaleY(1);opacity:0.9;}}
+
+    .hero{text-align:center;margin-bottom:2.5rem;}
+    .hero h2{font-size:2.6rem;font-weight:800;line-height:1.15;letter-spacing:-0.02em;margin-bottom:0.75rem;}
+    .hero h2 .line2{display:block;background:linear-gradient(90deg,#00e5ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .hero p{font-family:'Space Mono',monospace;font-size:0.85rem;color:#6b7280;line-height:1.7;max-width:360px;margin:0 auto;}
+
+    .action-card{width:100%;background:#151829;border:1px solid #1e2235;border-radius:18px;padding:1.5rem;margin-bottom:1.25rem;}
+
+    .btn-login{
+      width:100%;padding:1rem 1.5rem;background:linear-gradient(135deg,#00e5ff,#00b8cc);
+      border:none;border-radius:12px;color:#0d0f1a;font-family:'Space Grotesk',sans-serif;
+      font-size:1.05rem;font-weight:700;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:0.65rem;
+      transition:all 0.2s;margin-bottom:1.1rem;text-decoration:none;
+    }
+    .btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,229,255,0.35);}
+    .btn-login svg{width:20px;height:20px;}
+
+    .divider{display:flex;align-items:center;gap:0.75rem;margin-bottom:1.1rem;}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:#1e2235;}
+    .divider span{font-size:0.82rem;color:#4b5563;}
+
+    .btn-register{
+      width:100%;padding:0.95rem 1.5rem;background:transparent;border:1px solid #2a2d3e;
+      border-radius:12px;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;
+      font-size:1rem;font-weight:600;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:0.65rem;
+      transition:all 0.2s;text-decoration:none;
+    }
+    .btn-register:hover{border-color:#00e5ff;color:#00e5ff;background:rgba(0,229,255,0.04);}
+    .btn-register svg{width:20px;height:20px;}
+
+    .footnote{display:flex;align-items:center;gap:0.5rem;font-family:'Space Mono',monospace;font-size:0.72rem;color:#4b5563;margin-top:0.5rem;}
+    .footnote svg{width:14px;height:14px;stroke:#4b5563;flex-shrink:0;}
+  </style>
+</head>
+<style>
+  .btn-admin{
+    position:fixed;top:1rem;left:1rem;z-index:100;
+    display:flex;align-items:center;gap:0.4rem;
+    padding:0.45rem 0.85rem;border-radius:8px;
+    background:rgba(222, 9, 13, 0.85);backdrop-filter:blur(8px);
+    border:1px solid #1e2235;color:#4b5563;
+    font-family:'Space Mono',monospace;font-size:0.68rem;
+    text-decoration:none;letter-spacing:0.06em;
+    transition:all 0.2s;
+  }
+  .btn-admin:hover{border-color:rgba(239,68,68,0.4);color:#ef4444;background:rgba(239,68,68,0.06);}
+  .btn-admin svg{width:12px;height:12px;stroke:currentColor;}
+</style>
+
+<body>
+<a href="/admin" class="btn-admin" style = "color: white;">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round">
+    <rect x="3" y="11" width="18" height="11" rx="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+  ADMIN
+</a>
+<div class="page">
+  <div class="logo">
+    <div class="logo-icon">
+      <div class="logo-ring"></div>
+      <div class="logo-ring2"></div>
+      <svg class="mic" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+        <rect x="9" y="2" width="6" height="12" rx="3" fill="rgba(0,229,255,0.15)" stroke="#00e5ff"/>
+        <path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7" stroke="#00e5ff" fill="none"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="#00e5ff"/>
+        <line x1="9" y1="22" x2="15" y2="22" stroke="#00e5ff"/>
+      </svg>
+    </div>
+    <h1>Voice<span>Access</span></h1>
+  </div>
+
+  <div class="badge"><span class="badge-dot"></span>GENAGNO VOICE ENGINE ACTIVE</div>
+
+  <div class="waveform">
+    <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+    <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+    <div class="wbar"></div><div class="wbar"></div><div class="wbar"></div>
+  </div>
+
+  <div class="hero">
+    <h2>Your Voice is<span class="line2">Your Password</span></h2>
+    <p>Secure Voice authentication powered by<br>GenAgno.</p>
+  </div>
+
+  <div class="action-card">
+    <a href="/login" class="btn-login">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      Login with Voice
+    </a>
+    <div class="divider"><span>or</span></div>
+    <a href="/register" class="btn-register">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+        <line x1="19" y1="8" x2="19" y2="14"/>
+        <line x1="22" y1="11" x2="16" y2="11"/>
+      </svg>
+      Register Voice Profile
+    </a>
+  </div>
+
+  <div class="footnote">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    Raw audio deleted after embedding extraction
+  </div>
+</div>
+</body>
+</html>

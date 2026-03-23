@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceAccess — Login</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0d0f1a;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;
+      font-family:'Space Grotesk',sans-serif;color:#fff;padding:1.5rem;position:relative;overflow-y:auto;
+    }
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);
+      background-size:48px 48px;pointer-events:none;z-index:0;
+    }
+    .page{position:relative;z-index:1;width:100%;max-width:520px;animation:fadeUp 0.5s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+    /* Back */
+    .back{display:inline-flex;align-items:center;gap:0.4rem;color:#6b7280;font-size:0.88rem;text-decoration:none;margin-bottom:1rem;transition:color 0.2s;}
+    .back:hover{color:#00e5ff;}
+    .back svg{width:16px;height:16px;stroke:currentColor;}
+
+    /* Card */
+    .card{background:#151829;border:1px solid #1e2235;border-radius:18px;padding:1.75rem 1.75rem 2rem;box-shadow:0 24px 80px rgba(0,0,0,0.6);}
+
+    /* Header */
+    .card-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+    .header-icon{
+      width:52px;height:52px;border-radius:14px;
+      background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .header-icon svg{width:26px;height:26px;stroke:#00e5ff;}
+    .card-header h2{font-size:1.6rem;font-weight:800;letter-spacing:-0.01em;line-height:1.1;}
+    .card-header p{font-family:'Space Mono',monospace;font-size:0.72rem;color:#6b7280;margin-top:0.25rem;}
+
+    /* Phrase box */
+    .phrase-box{background:#0d0f1a;border:1px solid rgba(0,229,255,0.2);border-radius:12px;padding:1rem;margin-bottom:1rem;position:relative;}
+    .phrase-top{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;}
+    .phrase-dot{width:7px;height:7px;border-radius:50%;background:#00e5ff;animation:blink 2s ease-in-out infinite;flex-shrink:0;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+    .phrase-top span{font-family:'Space Mono',monospace;font-size:0.68rem;color:#00e5ff;letter-spacing:0.1em;text-transform:uppercase;}
+    .phrase-refresh{position:absolute;top:0.9rem;right:0.9rem;background:none;border:none;cursor:pointer;color:#4b5563;padding:0.25rem;border-radius:6px;transition:color 0.2s;}
+    .phrase-refresh:hover{color:#00e5ff;}
+    .phrase-refresh svg{width:16px;height:16px;stroke:currentColor;}
+
+    /* Number challenge box — hidden until Record is clicked */
+    .number-box{
+      display:none;background:#0d0f1a;border:1px solid rgba(0,229,255,0.35);
+      border-radius:12px;padding:0.85rem 1rem;margin-bottom:1rem;
+      text-align:center;animation:fadeUp 0.3s ease;
+    }
+    .number-box.show{display:block;}
+    .number-label{font-family:'Space Mono',monospace;font-size:0.68rem;color:#6b7280;
+      letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;}
+    .number-value{font-family:'Space Mono',monospace;font-size:2.2rem;font-weight:700;
+      color:#00e5ff;letter-spacing:0.25em;text-shadow:0 0 20px rgba(0,229,255,0.4);}
+    .number-hint{font-family:'Space Mono',monospace;font-size:0.65rem;color:#4b5563;margin-top:0.3rem;}
+
+    .phrase-text{font-size:0.95rem;font-weight:500;color:#e2e8f0;line-height:1.65;padding-right:2rem;}
+
+    /* Recorder box */
+    .recorder-box{
+      background:#080a14;border:1px solid #1e2235;border-radius:12px;
+      padding:1.25rem 1rem;margin-bottom:1rem;text-align:center;
+      transition:border-color 0.3s,box-shadow 0.3s;
+    }
+    .recorder-box.recording{border-color:rgba(239,68,68,0.5);box-shadow:0 0 24px rgba(239,68,68,0.12);}
+    .recorder-box.done{border-color:rgba(0,229,255,0.4);box-shadow:0 0 24px rgba(0,229,255,0.1);}
+
+    /* Dots visualizer */
+    .viz{display:flex;align-items:center;justify-content:center;gap:3px;height:20px;margin-bottom:1rem;}
+    .vdot{width:4px;height:4px;border-radius:50%;background:#1e2235;transition:all 0.08s;}
+    .recorder-box.recording .vdot{background:#ef4444;}
+    .recorder-box.done .vdot{background:#00e5ff;}
+
+    /* Timer ring */
+    .timer-wrap{position:relative;width:70px;height:70px;margin:0 auto 0.75rem;}
+    .timer-wrap svg{transform:rotate(-90deg);}
+    .t-bg{fill:none;stroke:#1e2235;stroke-width:4;}
+    .t-fill{fill:none;stroke:#00e5ff;stroke-width:4;stroke-linecap:round;stroke-dasharray:188.5;stroke-dashoffset:0;transition:stroke-dashoffset 0.1s linear,stroke 0.3s;}
+    .recorder-box.recording .t-fill{stroke:#ef4444;}
+    .recorder-box.done .t-fill{stroke:#10b981;}
+    .recorder-box.done .t-bg{stroke:#10b981;fill:rgba(16,185,129,0.15);}
+    .timer-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:1.05rem;font-weight:700;color:#fff;}
+    .rec-label{font-family:'Space Mono',monospace;font-size:0.7rem;color:#4b5563;letter-spacing:0.1em;text-transform:uppercase;}
+    .recorder-box.recording .rec-label{color:#ef4444;}
+    .recorder-box.done .rec-label{color:#00e5ff;}
+
+    /* Buttons */
+    .btn-record{
+      width:100%;padding:0.95rem;border-radius:12px;border:none;
+      background:linear-gradient(135deg,#ef4444,#dc2626);
+      color:#fff;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;
+      cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:0.65rem;
+    }
+    .btn-record:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(239,68,68,0.4);}
+    .btn-record:disabled{opacity:0.5;cursor:not-allowed;}
+    .btn-record svg{width:18px;height:18px;}
+
+    .btn-identify{
+      width:100%;padding:0.95rem;border-radius:12px;border:none;
+      background:linear-gradient(135deg,#00e5ff,#00b8cc);
+      color:#0d0f1a;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;
+      cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;
+    }
+    .btn-identify:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,229,255,0.35);}
+    .btn-identify:disabled{opacity:0.6;cursor:not-allowed;filter:grayscale(40%);}
+    .btn-identify svg{width:17px;height:17px;stroke:#0d0f1a;}
+
+    /* Result */
+    .result{border-radius:10px;padding:0.85rem 1rem;display:none;animation:fadeUp 0.3s ease;margin-top:0.75rem;}
+    .result.success{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);}
+    .result.error{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);}
+    .result-title{font-weight:700;font-size:0.9rem;margin-bottom:0.15rem;}
+    .result.success .result-title{color:#10b981;}
+    .result.error .result-title{color:#ef4444;}
+    .result-msg{font-size:0.8rem;color:#6b7280;font-family:'Space Mono',monospace;word-break:break-word;overflow-wrap:anywhere;white-space:pre-wrap;max-height:80px;overflow-y:auto;}
+
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spinner{width:16px;height:16px;border:2px solid rgba(13,15,26,0.25);border-top-color:#0d0f1a;border-radius:50%;animation:spin 0.7s linear infinite;}
+    .toast{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%) translateY(-170%);padding:0.7rem 1.4rem;border-radius:10px;font-size:0.82rem;font-weight:600;z-index:1000;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);min-width:230px;text-align:center;font-family:'Space Mono',monospace;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.success{background:#064e3b;border:1px solid #10b981;color:#6ee7b7;}
+    .toast.error{background:#450a0a;border:1px solid #ef4444;color:#fca5a5;}
+
+    /* Instruction modal */
+    .modal-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);
+      z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;
+      animation:fadeIn 0.2s ease;
+    }
+    .modal-overlay.hidden{display:none;}
+    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+    .modal{
+      background:#151829;border:1px solid #1e2235;border-radius:20px;
+      padding:2rem 1.75rem;max-width:420px;width:100%;
+      box-shadow:0 24px 80px rgba(0,0,0,0.8);animation:slideUp 0.25s ease;
+    }
+    @keyframes slideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    .modal-title{
+      font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:0.3rem;
+      display:flex;align-items:center;gap:0.5rem;
+    }
+    .modal-sub{font-family:'Space Mono',monospace;font-size:0.7rem;color:#6b7280;margin-bottom:1.5rem;}
+    .modal-steps{display:flex;flex-direction:column;gap:0.85rem;margin-bottom:1.75rem;}
+    .modal-step{display:flex;align-items:flex-start;gap:0.85rem;}
+    .modal-step-num{
+      min-width:26px;height:26px;border-radius:50%;background:rgba(0,229,255,0.1);
+      border:1px solid rgba(0,229,255,0.3);color:#00e5ff;font-family:'Space Mono',monospace;
+      font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .modal-step-text{font-size:0.88rem;color:#c8d0e0;line-height:1.5;padding-top:3px;}
+    .modal-step-text strong{color:#fff;}
+    .modal-highlight{
+      background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15);
+      border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.5rem;
+      font-family:'Space Mono',monospace;font-size:0.75rem;color:#00e5ff;
+      display:flex;align-items:center;gap:0.5rem;
+    }
+    .btn-modal-start{
+      width:100%;padding:0.95rem;border-radius:12px;border:none;
+      background:linear-gradient(135deg,#00b8cc,#00e5ff);color:#0d0f1a;
+      font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:800;
+      cursor:pointer;transition:all 0.2s;
+    }
+    .btn-modal-start:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,229,255,0.3);}
+  </style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- Instruction modal -->
+<div class="modal-overlay hidden" id="instructionModal">
+  <div class="modal">
+    <div class="modal-title">🎙️ Before You Record</div>
+    <div class="modal-sub">READ THESE INSTRUCTIONS CAREFULLY</div>
+
+    <div class="modal-steps">
+      <div class="modal-step">
+        <div class="modal-step-num">1</div>
+        <div class="modal-step-text">
+          <strong>Speak clearly</strong> — use your natural voice at a normal volume. Don't whisper or shout.
+        </div>
+      </div>
+      <div class="modal-step">
+        <div class="modal-step-num">2</div>
+        <div class="modal-step-text">
+          <strong>A number will appear</strong> on screen the moment recording starts — read it out loud <strong>first</strong>, before the passage.
+        </div>
+      </div>
+      <div class="modal-step">
+        <div class="modal-step-num">3</div>
+        <div class="modal-step-text">
+          <strong>Keep the same tone</strong> throughout — speak the number and the passage in the same voice, same pace, same distance from the mic.
+        </div>
+      </div>
+      <div class="modal-step">
+        <div class="modal-step-num">4</div>
+        <div class="modal-step-text">
+          <strong>Hold your device steady</strong> and stay in a quiet place. Background noise reduces accuracy.
+        </div>
+      </div>
+      <div class="modal-step">
+        <div class="modal-step-num">5</div>
+        <div class="modal-step-text">
+          Recording stops <strong>automatically</strong> — do not click anything while recording.
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-highlight">
+      ⚡ The number appears AFTER you click Start — say it first, then read the passage
+    </div>
+
+    <button class="btn-modal-start" onclick="confirmAndRecord()">
+      Got it — Start Recording
+    </button>
+  </div>
+</div>
+
+<div class="page">
+  <a href="/" class="back">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </a>
+  <div class="card">
+    <div class="card-header">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+      </div>
+      <div>
+        <h2>Voice Login</h2>
+        <p>Read the passage aloud to identify yourself</p>
+      </div>
+    </div>
+
+    <div class="phrase-box">
+      <div class="phrase-top">
+        <span class="phrase-dot"></span>
+        <span>Read this passage aloud</span>
+      </div>
+      <button class="phrase-refresh" onclick="newPhrase()" title="New passage">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+      <div class="phrase-text" id="phraseText">Loading...</div>
+    </div>
+
+
+    <!-- Number challenge — revealed only when Record starts -->
+    <div class="number-box" id="numberBox">
+      <div class="number-label">⚡ Say this number during your recording</div>
+      <div class="number-value" id="numberValue">----</div>
+      <div class="number-hint">Speak it clearly anywhere in your recording</div>
+    </div>
+
+    <div class="recorder-box" id="recorderBox">
+      <div class="viz" id="viz"></div>
+      <div class="timer-wrap">
+        <svg width="70" height="70" viewBox="0 0 72 72">
+          <circle class="t-bg" cx="36" cy="36" r="30"/>
+          <circle class="t-fill" id="timerRing" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="timer-text" id="timerText">5</div>
+      </div>
+      <div class="rec-label" id="recLabel">Ready to record</div>
+    </div>
+
+    <button class="btn-record" id="btnRecord" onclick="showInstructions()">
+      <svg viewBox="0 0 24 24" fill="white" stroke="none" width="18" height="18">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      Record Voice (5 sec)
+    </button>
+
+    <button class="btn-identify" id="btnIdentify" onclick="submitLogin()" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17">
+        <rect x="3" y="11" width="18" height="11" rx="2" stroke="#0d0f1a"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#0d0f1a"/>
+      </svg>
+      Identify My Voice
+    </button>
+
+    <div class="result" id="result">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-msg" id="resultMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PHRASES = [
+    "The lighthouse beam swept across the dark ocean as sailors navigated through the fog.",
+    "Voice authentication uses unique speech patterns to verify identity without a password.",
+    "The Amazon river winds through dense jungle, home to thousands of rare species.",
+    "The city market buzzed with vendors selling fresh bread and roasted coffee at dawn.",
+    "Artificial intelligence learns by finding patterns in large amounts of data over time.",
+    "Encryption scrambles data so only authorised parties can read it using a secret key.",
+    "Biometric systems use physical traits like voice or fingerprints to verify who you are.",
+    "The engineer checked every circuit connection before flipping the power switch on.",
+    "Learning a new language changes the way you think and understand the world around you.",
+    "The historian carefully unfolded the brittle letter, its words urgent and clearly written.",
+    "Mountain trails become dangerous in winter when snow buries the path markers overnight.",
+    "Coral reefs support a quarter of all marine life despite covering very little of the ocean.",
+    "The old school had seen five generations of students walk through its stone-walled corridors.",
+    "The midnight train carried passengers northward through silent towns and darkened fields.",
+    "A dense fog rolled across the valley, muffling every sound in the early morning air.",
+  ];
+
+  const DUR=5000, DOTS=36;
+  const vizEl=document.getElementById('viz');
+  for(let i=0;i<DOTS;i++){const d=document.createElement('div');d.className='vdot';vizEl.appendChild(d);}
+  const dots=vizEl.querySelectorAll('.vdot');
+
+  function startViz(){
+    if(!analyser)return;
+    const buf=new Uint8Array(analyser.frequencyBinCount);
+    function frame(){
+      analyser.getByteFrequencyData(buf);
+      dots.forEach((d,i)=>{const s=Math.max(3,(buf[i]||0)/255*14);d.style.width=s+'px';d.style.height=s+'px';});
+      animFrame=requestAnimationFrame(frame);
+    }frame();
+  }
+  function stopViz(){cancelAnimationFrame(animFrame);dots.forEach(d=>{d.style.width='4px';d.style.height='4px';});}
+
+  function newPhrase(){
+    const f=PHRASES.filter(p=>p!==currentPhrase);
+    currentPhrase=f[Math.floor(Math.random()*f.length)];
+    const el=document.getElementById('phraseText');
+    el.style.opacity='0';
+    setTimeout(()=>{el.textContent=currentPhrase;el.style.transition='opacity 0.3s';el.style.opacity='1';},150);
+  }
+
+  function toast(msg,type){
+    const el=document.getElementById('toast');
+    el.textContent=msg;el.className=`toast ${type}`;el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),3000);
+  }
+
+  function mime(){
+    for(const t of['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg','audio/mp4'])
+      try{if(MediaRecorder.isTypeSupported(t))return t;}catch(e){}return'';
+  }
+
+  let currentPhrase='', audioBlob=null, mediaRecorder=null, timerInterval=null, animFrame=null, analyser=null;
+  let currentSessionId = null;
+
+  function showInstructions() {
+    document.getElementById('instructionModal').classList.remove('hidden');
+  }
+
+  function confirmAndRecord() {
+    document.getElementById('instructionModal').classList.add('hidden');
+    startRecording();
+  }
+
+  async function startRecording(){
+    document.getElementById('btnRecord').disabled=true;
+    document.getElementById('btnIdentify').disabled=true;
+    document.getElementById('result').style.display='none';
+    document.getElementById('numberBox').className='number-box';
+    document.getElementById('numberValue').textContent='----';
+    audioBlob=null; currentSessionId=null;
+
+    // Step 1: Get fresh number from server (BEFORE mic opens)
+    let number, sessionId;
+    try{
+      const res  = await fetch('/api/challenge', {method:'POST'});
+      const data = await res.json();
+      if(!data.success) throw new Error('Challenge failed');
+      number    = data.number;
+      sessionId = data.session_id;
+      currentSessionId = sessionId;
+    } catch(e){
+      document.getElementById('btnRecord').disabled=false;
+      toast('Could not get challenge. Try again.','error');
+      return;
+    }
+
+    // Step 2: Open mic
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      document.getElementById('recorderBox').className='recorder-box recording';
+      document.getElementById('recLabel').textContent='● Recording…';
+      const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      analyser=ctx.createAnalyser();analyser.fftSize=64;
+      ctx.createMediaStreamSource(stream).connect(analyser);startViz();
+
+      // Step 3: Show number NOW — after mic is open, impossible to pre-record
+      document.getElementById('numberValue').textContent=number;
+      document.getElementById('numberBox').className='number-box show';
+
+      let rem=DUR/1000;
+      const ring=document.getElementById('timerRing'),txt=document.getElementById('timerText'),C=188.5;
+      ring.style.strokeDashoffset='0';
+      timerInterval=setInterval(()=>{
+        rem=Math.max(0,rem-0.1);
+        txt.textContent=rem.toFixed(0);
+        ring.style.strokeDashoffset=C*(1-rem/(DUR/1000));
+        if(rem<=0)clearInterval(timerInterval);
+      },100);
+
+      const chunks=[],mt=mime();
+      mediaRecorder=new MediaRecorder(stream,mt?{mimeType:mt}:{});
+      mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+      mediaRecorder.onstop=()=>{
+        audioBlob=new Blob(chunks,{type:mt||'audio/webm'});
+        stream.getTracks().forEach(t=>t.stop());
+        stopViz();clearInterval(timerInterval);
+        document.getElementById('recorderBox').className='recorder-box done';
+        document.getElementById('recLabel').textContent='✓ Voice captured';
+        document.getElementById('timerText').textContent='✓';
+        document.getElementById('btnRecord').disabled=false;
+        toast('Voice captured! Identifying…','success');
+        submitLogin();
+      };
+      mediaRecorder.start();
+      setTimeout(()=>{if(mediaRecorder?.state==='recording')mediaRecorder.stop();},DUR);
+    }catch(e){
+      document.getElementById('btnRecord').disabled=false;
+      toast('Microphone access denied.','error');
+    }
+  }
+
+  async function submitLogin(){
+    if(!audioBlob) return;
+    const btn=document.getElementById('btnIdentify');
+    btn.disabled=true;
+    btn.innerHTML='<div class="spinner"></div> Identifying…';
+    const fd=new FormData();
+    fd.append('audio',audioBlob,'voice'+(audioBlob.type.includes('ogg')?'.ogg':audioBlob.type.includes('mp4')?'.mp4':'.webm'));
+    fd.append('session_id', currentSessionId || '');
+    try{
+      const res=await fetch('/api/login',{method:'POST',body:fd});
+      const data=await res.json();
+      const r=document.getElementById('result');r.style.display='block';
+      if(data.success){
+        r.className='result success';
+        document.getElementById('resultTitle').textContent='✓ Access Granted';
+        document.getElementById('resultMsg').textContent=`Welcome back, ${data.username}! Redirecting…`;
+        toast(`Welcome, ${data.username}!`,'success');
+        setTimeout(()=>{window.location.href=`/dashboard?user=${encodeURIComponent(data.username)}&score=${data.score}&model=${encodeURIComponent(data.model||'speechbrain-ecapa')}`;},1200);
+      } else if(data.challenge_expired){
+        r.className='result error';
+        document.getElementById('resultTitle').textContent='✗ Challenge Expired';
+        document.getElementById('resultMsg').textContent='Session timed out. Recording again…';
+        toast('Challenge expired. Recording again…','error');
+        setTimeout(()=>startRecording(), 1500);
+      } else {
+        r.className='result error';
+        document.getElementById('resultTitle').textContent='✗ Not Recognized';
+        const msg = (data.message||'Voice or number check failed.');
+        document.getElementById('resultMsg').textContent = msg.length > 120 ? msg.substring(0,120)+'…' : msg;
+        toast('Access denied.','error');
+      }
+    }catch(e){toast('Network error. Try again.','error');}
+    finally{
+      btn.disabled=false;
+      btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17"><rect x="3" y="11" width="18" height="11" rx="2" stroke="#0d0f1a"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#0d0f1a"/></svg> Identify My Voice';
+    }
+  }
+
+  newPhrase();
+</script>
+</body>
+</html>

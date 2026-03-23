@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoiceAccess — Admin Login</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0d0f1a;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;
+      font-family:'Space Grotesk',sans-serif;color:#fff;padding:1.5rem;position:relative;overflow-y:auto;
+    }
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(239,68,68,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(239,68,68,0.03) 1px,transparent 1px);
+      background-size:48px 48px;pointer-events:none;z-index:0;
+    }
+    .page{position:relative;z-index:1;width:100%;max-width:520px;animation:fadeUp 0.5s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+    .back{display:inline-flex;align-items:center;gap:0.4rem;color:#6b7280;font-size:0.88rem;text-decoration:none;margin-bottom:1rem;transition:color 0.2s;}
+    .back:hover{color:#ef4444;}
+    .back svg{width:16px;height:16px;stroke:currentColor;}
+
+    .card{background:#151829;border:1px solid #1e2235;border-radius:18px;padding:1.75rem 1.75rem 2rem;box-shadow:0 24px 80px rgba(0,0,0,0.6);}
+
+    /* Header */
+    .card-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+    .header-icon{width:52px;height:52px;border-radius:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .header-icon svg{width:26px;height:26px;stroke:#ef4444;}
+    .card-header h2{font-size:1.6rem;font-weight:800;letter-spacing:-0.01em;line-height:1.1;}
+    .card-header p{font-family:'Space Mono',monospace;font-size:0.72rem;color:#6b7280;margin-top:0.25rem;}
+
+    /* Phrase box */
+    .phrase-box{background:#0d0f1a;border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:1rem;margin-bottom:1rem;position:relative;}
+    .phrase-top{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem;}
+    .phrase-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;animation:blink 2s ease-in-out infinite;flex-shrink:0;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+    .phrase-top span{font-family:'Space Mono',monospace;font-size:0.68rem;color:#ef4444;letter-spacing:0.1em;text-transform:uppercase;}
+    .phrase-refresh{position:absolute;top:0.9rem;right:0.9rem;background:none;border:none;cursor:pointer;color:#4b5563;padding:0.25rem;border-radius:6px;transition:color 0.2s;}
+    .phrase-refresh:hover{color:#ef4444;}
+    .phrase-refresh svg{width:16px;height:16px;stroke:currentColor;}
+    .phrase-text{font-size:0.95rem;font-weight:500;color:#e2e8f0;line-height:1.65;padding-right:2rem;}
+
+    /* Recorder */
+    .recorder-box{background:#080a14;border:1px solid #1e2235;border-radius:12px;padding:1.25rem 1rem;margin-bottom:1rem;text-align:center;transition:border-color 0.3s,box-shadow 0.3s;}
+    .recorder-box.recording{border-color:rgba(239,68,68,0.5);box-shadow:0 0 24px rgba(239,68,68,0.12);}
+    .recorder-box.done{border-color:rgba(239,68,68,0.4);box-shadow:0 0 24px rgba(239,68,68,0.1);}
+
+    .viz{display:flex;align-items:center;justify-content:center;gap:3px;height:20px;margin-bottom:1rem;}
+    .vdot{width:4px;height:4px;border-radius:50%;background:#1e2235;transition:all 0.08s;}
+    .recorder-box.recording .vdot{background:#ef4444;}
+    .recorder-box.done .vdot{background:#ef4444;opacity:0.5;}
+
+    .timer-wrap{position:relative;width:70px;height:70px;margin:0 auto 0.75rem;}
+    .timer-wrap svg{transform:rotate(-90deg);}
+    .t-bg{fill:none;stroke:#1e2235;stroke-width:4;}
+    .t-fill{fill:none;stroke:#ef4444;stroke-width:4;stroke-linecap:round;stroke-dasharray:188.5;stroke-dashoffset:0;transition:stroke-dashoffset 0.1s linear,stroke 0.3s;}
+    .recorder-box.done .t-fill{stroke:#10b981;}
+    .recorder-box.done .t-bg{stroke:#10b981;fill:rgba(16,185,129,0.15);}
+    .timer-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:1.05rem;font-weight:700;color:#fff;}
+    .rec-label{font-family:'Space Mono',monospace;font-size:0.7rem;color:#4b5563;letter-spacing:0.1em;text-transform:uppercase;}
+    .recorder-box.recording .rec-label{color:#ef4444;}
+    .recorder-box.done .rec-label{color:#10b981;}
+
+    /* Buttons */
+    .btn-record{width:100%;padding:0.95rem;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:0.65rem;}
+    .btn-record:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(239,68,68,0.4);}
+    .btn-record:disabled{opacity:0.5;cursor:not-allowed;}
+
+    .btn-identify{width:100%;padding:0.95rem;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:0.6rem;}
+    .btn-identify:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(239,68,68,0.4);}
+    .btn-identify:disabled{opacity:0.35;cursor:not-allowed;}
+    .btn-identify svg{width:17px;height:17px;stroke:#fff;}
+
+    /* Result */
+    .result{border-radius:10px;padding:0.85rem 1rem;display:none;animation:fadeUp 0.3s ease;margin-top:0.75rem;}
+    .result.success{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);}
+    .result.error  {background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);}
+    .result-title{font-weight:700;font-size:0.9rem;margin-bottom:0.15rem;}
+    .result.success .result-title{color:#10b981;}
+    .result.error   .result-title{color:#ef4444;}
+    .result-msg{font-size:0.8rem;color:#6b7280;font-family:'Space Mono',monospace;}
+
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+    .toast{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%) translateY(-170%);padding:0.7rem 1.4rem;border-radius:10px;font-size:0.82rem;font-weight:600;z-index:1000;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);min-width:230px;text-align:center;font-family:'Space Mono',monospace;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.success{background:#064e3b;border:1px solid #10b981;color:#6ee7b7;}
+    .toast.error  {background:#450a0a;border:1px solid #ef4444;color:#fca5a5;}
+
+    /* Number challenge box */
+    .number-box{
+      display:none;background:#0d0f1a;border:1px solid rgba(239,68,68,0.35);
+      border-radius:12px;padding:0.85rem 1rem;margin-bottom:1rem;
+      text-align:center;animation:fadeUp 0.3s ease;
+    }
+    .number-box.show{display:block;}
+    .number-label{font-family:'Space Mono',monospace;font-size:0.68rem;color:#6b7280;
+      letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;}
+    .number-value{font-family:'Space Mono',monospace;font-size:2.2rem;font-weight:700;
+      color:#ef4444;letter-spacing:0.25em;text-shadow:0 0 20px rgba(239,68,68,0.4);}
+    .number-hint{font-family:'Space Mono',monospace;font-size:0.65rem;color:#4b5563;margin-top:0.3rem;}
+  </style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div class="page">
+  <a href="/" class="back">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back
+  </a>
+  <div class="card">
+    <div class="card-header">
+      <div class="header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <div>
+        <h2>Admin Access</h2>
+        <p>Verify your voice to enter · Admin only</p>
+      </div>
+    </div>
+
+    <!-- Passage box -->
+    <div class="phrase-box">
+      <div class="phrase-top">
+        <span class="phrase-dot"></span>
+        <span>Read this passage aloud</span>
+      </div>
+      <button class="phrase-refresh" onclick="newPhrase()" title="New passage">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      </button>
+      <div class="phrase-text" id="phraseText">Loading...</div>
+    </div>
+
+    <!-- Recorder -->
+
+    <!-- Number challenge — revealed only when Record starts -->
+    <div class="number-box" id="numberBox">
+      <div class="number-label">⚡ Say this number during your recording</div>
+      <div class="number-value" id="numberValue">----</div>
+      <div class="number-hint">Speak it clearly anywhere in your recording</div>
+    </div>
+
+    <div class="recorder-box" id="recorderBox">
+      <div class="viz" id="viz"></div>
+      <div class="timer-wrap">
+        <svg width="70" height="70" viewBox="0 0 72 72">
+          <circle class="t-bg" cx="36" cy="36" r="30"/>
+          <circle class="t-fill" id="timerRing" cx="36" cy="36" r="30"/>
+        </svg>
+        <div class="timer-text" id="timerText">5</div>
+      </div>
+      <div class="rec-label" id="recLabel">Ready to record</div>
+    </div>
+
+    <button class="btn-record" id="btnRecord" onclick="startRecording()">
+      <svg viewBox="0 0 24 24" fill="white" stroke="none" width="18" height="18">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      Record Voice (5 sec)
+    </button>
+
+    <button class="btn-identify" id="btnIdentify" onclick="submitVoice()" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17">
+        <rect x="3" y="11" width="18" height="11" rx="2" stroke="white"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white"/>
+      </svg>
+      Verify &amp; Enter Admin
+    </button>
+
+    <div class="result" id="result">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result-msg"   id="resultMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Same paragraph bank as login — any passage works, we only care about voice
+  const PHRASES = [
+    "The lighthouse beam swept across the dark ocean as sailors navigated through the fog.",
+    "Voice authentication uses unique speech patterns to verify identity without a password.",
+    "The Amazon river winds through dense jungle, home to thousands of rare species.",
+    "The city market buzzed with vendors selling fresh bread and roasted coffee at dawn.",
+    "Artificial intelligence learns by finding patterns in large amounts of data over time.",
+    "Encryption scrambles data so only authorised parties can read it using a secret key.",
+    "Biometric systems use physical traits like voice or fingerprints to verify who you are.",
+    "The engineer checked every circuit connection before flipping the power switch on.",
+    "Learning a new language changes the way you think and understand the world around you.",
+    "The historian carefully unfolded the brittle letter, its words urgent and clearly written.",
+    "Mountain trails become dangerous in winter when snow buries the path markers overnight.",
+    "Coral reefs support a quarter of all marine life despite covering very little of the ocean.",
+    "The old school had seen five generations of students walk through its stone-walled corridors.",
+    "The midnight train carried passengers northward through silent towns and darkened fields.",
+    "A dense fog rolled across the valley, muffling every sound in the early morning air.",
+  ];
+
+  let currentPhrase='', audioBlob=null, mediaRecorder=null, timerInterval=null, animFrame=null, analyser=null;
+  let currentSessionId = null;
+  const DUR=5000, DOTS=36;
+
+  const vizEl=document.getElementById('viz');
+  for(let i=0;i<DOTS;i++){const d=document.createElement('div');d.className='vdot';vizEl.appendChild(d);}
+  const dots=vizEl.querySelectorAll('.vdot');
+
+  function startViz(){
+    if(!analyser)return;
+    const buf=new Uint8Array(analyser.frequencyBinCount);
+    function frame(){
+      analyser.getByteFrequencyData(buf);
+      dots.forEach((d,i)=>{const s=Math.max(3,(buf[i]||0)/255*14);d.style.width=s+'px';d.style.height=s+'px';});
+      animFrame=requestAnimationFrame(frame);
+    }frame();
+  }
+  function stopViz(){cancelAnimationFrame(animFrame);dots.forEach(d=>{d.style.width='4px';d.style.height='4px';});}
+
+  function newPhrase(){
+    const f=PHRASES.filter(p=>p!==currentPhrase);
+    currentPhrase=f[Math.floor(Math.random()*f.length)];
+    const el=document.getElementById('phraseText');
+    el.style.opacity='0';
+    setTimeout(()=>{el.textContent=currentPhrase;el.style.transition='opacity 0.3s';el.style.opacity='1';},150);
+  }
+
+  function toast(msg,type){
+    const el=document.getElementById('toast');
+    el.textContent=msg;el.className=`toast ${type}`;el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),3000);
+  }
+
+  function mime(){
+    for(const t of['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/ogg','audio/mp4'])
+      try{if(MediaRecorder.isTypeSupported(t))return t;}catch(e){}return'';
+  }
+
+  async function startRecording(){
+    document.getElementById('btnRecord').disabled=true;
+    document.getElementById('btnIdentify').disabled=true;
+    document.getElementById('result').style.display='none';
+    document.getElementById('numberBox').className='number-box';
+    document.getElementById('numberValue').textContent='----';
+    audioBlob=null; currentSessionId=null;
+
+    // Get fresh number from server before mic opens
+    let number, sessionId;
+    try{
+      const res  = await fetch('/api/challenge', {method:'POST'});
+      const data = await res.json();
+      if(!data.success) throw new Error('Challenge failed');
+      number    = data.number;
+      sessionId = data.session_id;
+      currentSessionId = sessionId;
+    } catch(e){
+      document.getElementById('btnRecord').disabled=false;
+      toast('Could not get challenge. Try again.','error');
+      return;
+    }
+
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      document.getElementById('recorderBox').className='recorder-box recording';
+      document.getElementById('recLabel').textContent='● Recording…';
+      const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      analyser=ctx.createAnalyser();analyser.fftSize=64;
+      ctx.createMediaStreamSource(stream).connect(analyser);startViz();
+
+      // Show number NOW — after mic opens
+      document.getElementById('numberValue').textContent=number;
+      document.getElementById('numberBox').className='number-box show';
+
+      let rem=DUR/1000;
+      const ring=document.getElementById('timerRing'),txt=document.getElementById('timerText'),C=188.5;
+      ring.style.strokeDashoffset='0';
+      timerInterval=setInterval(()=>{
+        rem=Math.max(0,rem-0.1);
+        txt.textContent=rem.toFixed(0);
+        ring.style.strokeDashoffset=C*(1-rem/(DUR/1000));
+        if(rem<=0)clearInterval(timerInterval);
+      },100);
+
+      const chunks=[],mt=mime();
+      mediaRecorder=new MediaRecorder(stream,mt?{mimeType:mt}:{});
+      mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+      mediaRecorder.onstop=()=>{
+        audioBlob=new Blob(chunks,{type:mt||'audio/webm'});
+        stream.getTracks().forEach(t=>t.stop());
+        stopViz();clearInterval(timerInterval);
+        document.getElementById('recorderBox').className='recorder-box done';
+        document.getElementById('recLabel').textContent='✓ Voice captured';
+        document.getElementById('timerText').textContent='✓';
+        document.getElementById('btnRecord').disabled=false;
+        document.getElementById('btnIdentify').disabled=false;
+        toast('Voice captured! Click Verify to continue.','success');
+      };
+      mediaRecorder.start();
+      setTimeout(()=>{if(mediaRecorder?.state==='recording')mediaRecorder.stop();},DUR);
+    }catch(e){
+      document.getElementById('btnRecord').disabled=false;
+      toast('Microphone access denied.','error');
+    }
+  }
+
+  async function submitVoice(){
+    if(!audioBlob){toast('Record your voice first.','error');return;}
+    const btn=document.getElementById('btnIdentify');
+    btn.disabled=true;
+    btn.innerHTML='<div class="spinner"></div> Verifying…';
+
+    const fd=new FormData();
+    fd.append('audio',audioBlob,'voice'+(audioBlob.type.includes('ogg')?'.ogg':audioBlob.type.includes('mp4')?'.mp4':'.webm'));
+    fd.append('session_id', currentSessionId || '');
+
+    try{
+      const res=await fetch('/api/admin/login',{method:'POST',body:fd});
+      const data=await res.json();
+      const r=document.getElementById('result');r.style.display='block';
+
+      if(data.challenge_expired){
+        r.className='result error';
+        document.getElementById('resultTitle').textContent='✗ Challenge Expired';
+        document.getElementById('resultMsg').textContent='Session timed out. Try again.';
+        toast('Challenge expired. Try again.','error');
+        setTimeout(()=>startRecording(), 1500);
+      } else if(data.success){
+        r.className='result success';
+        document.getElementById('resultTitle').textContent='✓ Admin Access Granted';
+        document.getElementById('resultMsg').textContent=`Verified as ${data.username}. Entering admin panel…`;
+        toast('Access granted!','success');
+        setTimeout(()=>{ window.location.href='/admin'; },1200);
+      } else {
+        r.className='result error';
+        document.getElementById('resultTitle').textContent='✗ Access Denied';
+        document.getElementById('resultMsg').textContent=data.message||'Voice not recognised as admin.';
+        toast('Access denied.','error');
+      }
+    }catch(e){
+      toast('Network error. Try again.','error');
+    }finally{
+      btn.disabled=false;
+      btn.innerHTML=`
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" width="17" height="17">
+          <rect x="3" y="11" width="18" height="11" rx="2" stroke="white"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white"/>
+        </svg> Verify &amp; Enter Admin`;
+    }
+  }
+
+  newPhrase();
+</script>
+</body>
+</html>
